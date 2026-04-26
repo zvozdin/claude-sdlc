@@ -7,41 +7,62 @@ argument-hint: "<feature description> [--stack=NAME]"
 
 Single entry point for the SDLC pipeline.
 
-## Input
+## Mandatory execution protocol
 
-`$ARGUMENTS` — feature description, optionally followed by `--stack=NAME` to override auto-detection.
+You MUST follow these steps **in order**, **printing each announcement verbatim** (do not summarize, skip, or collapse them):
 
-Examples:
-- `/sdlc:start "Add subscription billing with Stripe"`
-- `/sdlc:start "Add /healthz endpoint" --stack=vanilla`
+### Step 1 — Validate input
 
-## What this command does
+If `$ARGUMENTS` is empty: ask the user for a feature description and stop. Do NOT proceed.
 
-Invoke the `pipeline-orchestrator` skill (defined in `sdlc/skills/pipeline-orchestrator/SKILL.md`) with `$ARGUMENTS` as input.
+If `$ARGUMENTS` contains `--stack=NAME`: extract the value and remember it as `forced_stack`. Strip it from the description.
 
-The orchestrator will:
+Print verbatim:
+```
+▶ /sdlc:start
+   Description: <the cleaned-up description>
+   Forced stack: <forced_stack or "auto-detect">
+```
 
-1. Run dependency preflight (Step 0a — checks superpowers etc.).
-2. Auto-detect the stack from installed `stack.md` profiles (Step 0b), unless `--stack=` is specified.
-3. Apply skip-rules for trivial changes (Step 0c).
-4. Generate a `task_slug` and create `docs/plans/{task_slug}/` for inter-phase communication.
-5. Execute the pipeline phases sequentially:
-   - business_analysis
-   - development (+ any stack-defined extra phases like Laravel's `database`)
-   - qa
-   - security
-   - documentation
-6. Run `post_pipeline_checks` from the active stack profile.
-7. Write `_telemetry.json` and print a final summary.
+### Step 2 — Invoke the pipeline-orchestrator skill
 
-## Behavior
+Use the Skill tool to load and execute the `pipeline-orchestrator` skill. Pass the cleaned-up description and `forced_stack` flag as inputs. **Do not improvise or inline the orchestration logic — delegate to the skill.**
 
-- **Cost-conscious:** Each agent uses a tier-appropriate model. QA has a hard 3-attempt iteration cap. Phase handoffs are compact summaries (≤2-3K tokens), not full outputs.
-- **Stack-agnostic:** Works on any project. Auto-detects frameworks via `stack.md` profiles. Falls back to vanilla.
-- **Recoverable:** If the pipeline aborts mid-way, telemetry and partial artifacts remain in `docs/plans/{task_slug}/`. You can resume by running `/sdlc:start` again with the same description.
+The skill enforces its own MUST-print protocol for stack detection (`🎯 Detected stack: ...`), phase boundaries (`▶ Phase N/M: ...`), and the final summary. If you find yourself not printing these — stop, re-read the skill, and start over.
 
-## Instructions
+### Step 3 — Hard rules during orchestration
 
-Read and follow `pipeline-orchestrator/SKILL.md` exactly. Do not improvise. Do not edit project source files directly — that's the agents' job.
+- Do NOT edit project source files directly. The skill dispatches specialist agents for that.
+- Do NOT skip the announcement prints. Each phase boundary is a contract with the user.
+- Do NOT exit early after BA without running through all phases (unless an earlier phase explicitly aborted with a documented reason).
 
-If `$ARGUMENTS` is empty, ask the user for a feature description before proceeding.
+### Step 4 — On unrecoverable failure
+
+If any phase fails fatally (e.g. agent crashes, post-validation impossible to satisfy):
+- Print: `⛔ Pipeline halted at phase: <name>. Reason: <one-line>`
+- Write partial telemetry to `docs/plans/{task_slug}/_telemetry.json` with `aborted_at_phase: <name>`.
+- Stop. Do not continue.
+
+---
+
+## What the orchestrator skill does
+
+(For your reference — the skill itself contains the authoritative algorithm.)
+
+1. **Step 0a** — dependency preflight (reads `runtime-dependencies.json`, checks superpowers etc.).
+2. **Step 0b** — stack detection via Glob `~/.claude/plugins/cache/**/stack.md`. Picks highest-priority match. Prints `🎯 Detected stack: ...` (MANDATORY).
+3. **Step 0c** — skip-rules for trivial changes.
+4. **Step 1-2** — parse profile, generate `task_slug`, create `docs/plans/{task_slug}/`.
+5. **Step 3** — execute each phase (BA → Dev → [extras] → QA → Sec → Docs) via specialist agents. Compact handoffs.
+6. **Step 4** — post-pipeline checks (lint, tests, route:list).
+7. **Step 5** — telemetry + final summary (MANDATORY printed).
+
+---
+
+## Examples
+
+```
+/sdlc:start "Add subscription billing with Stripe"
+/sdlc:start "Add /healthz endpoint" --stack=vanilla
+/sdlc:start "Fix typo in README"
+```

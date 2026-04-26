@@ -97,7 +97,15 @@ If `$ARGUMENTS` includes `--stack=NAME`, use that profile and skip auto-detect.
 
 If nothing matches, fall back to vanilla (`priority: 0`).
 
-Announce: `🎯 Detected stack: {stack_name}. Using profile from {plugin_name}.`
+🚨 **MUST PRINT VERBATIM** (do not paraphrase, do not skip):
+
+```
+🎯 Detected stack: {stack_name} (priority {N}, from {plugin_name})
+   detect rules: {one-line summary, e.g. "composer.json + laravel/framework"}
+   forced via --stack: {yes|no}
+```
+
+This print is a contract with the user. If you skip it, the user has no way to verify detection worked. If you find yourself about to call an agent without having printed this — STOP and print it first.
 
 ### Step 0c — Skip-rule analysis (cost optimization)
 
@@ -113,16 +121,90 @@ For each skip applied, record in `CONTEXT.skip_rules_applied[]` for telemetry.
 
 > Future skip-rules (Phase 3): config-only changes skip QA; <50 LOC + no DB skips Security; etc. Do not infer beyond v0.0.1 rules.
 
-### Step 1 — Parse selected profile
+### Step 1 — Parse selected profile and apply project-local overrides
 
-Extract from the matched `stack.md`:
+#### 1a. Parse the matched `stack.md`
+
+Extract:
 - `agents_per_phase`: phase → agent name mapping.
 - `convention_skills`: skill identifiers to apply during development.
 - `phase_prompts_injection`: per-phase additional instructions.
 - `extra_phases`: list of `{name, after, agent, description}` to insert.
 - `post_pipeline_checks`: shell commands to run at the end.
 
-Build the canonical phase order:
+Hold these values as `PROFILE` (mutable in 1b).
+
+#### 1b. Apply project-local overrides from `<project>/.claude/sdlc.local.yaml`
+
+Check whether the file exists:
+
+```
+<project_root>/.claude/sdlc.local.yaml
+```
+
+If absent — skip this sub-step silently. Continue with `PROFILE` as-is.
+
+If present — `Read` and parse it. Recognized top-level keys:
+
+| Key | Type | Merge semantics |
+|---|---|---|
+| `post_pipeline_checks` | array of strings | **REPLACES** plugin's value entirely (set to `[]` to disable default checks). |
+| `phase_command_overrides` | object | Passed as context flags to agent prompts in Step 3 (see below). Plugin defaults remain available; overrides ADD or REPLACE specific keys. |
+| `extra_phase_prompts` | object (phase → string) | **APPENDS** to `phase_prompts_injection` for that phase (additive — don't lose plugin guidance). |
+| `skip_phases` | array of strings | Phase names to remove from the canonical order in 1c. |
+| `convention_skills_extra` | array of strings | APPENDS to `convention_skills`. |
+
+**Example `sdlc.local.yaml`:**
+
+```yaml
+# <project>/.claude/sdlc.local.yaml
+post_pipeline_checks:
+  - ./vendor/bin/pint --test
+  - ./vendor/bin/pest
+  - php artisan route:list
+
+phase_command_overrides:
+  development:
+    php_runner: php                    # NOT "docker compose exec -T app php"
+    artisan_runner: php artisan
+    composer_runner: composer
+  database:
+    migrate_command: php artisan migrate
+    rollback_command: php artisan migrate:rollback --step=1
+
+extra_phase_prompts:
+  qa: |
+    Use our snapshot helper at tests/Helpers/Snapshot.php for JSON comparisons.
+
+skip_phases:
+  - security                  # external SAST handles this in CI
+
+convention_skills_extra:
+  - acme:internal-api-style
+```
+
+After merging, store as `EFFECTIVE_PROFILE` and use it for the rest of the pipeline.
+
+🚨 **MUST PRINT VERBATIM** if any override was applied (otherwise stay silent on this sub-step):
+
+```
+🔧 Local overrides applied from .claude/sdlc.local.yaml:
+   post_pipeline_checks: replaced (N items)
+   phase_command_overrides: <list of phase.key paths modified>
+   extra_phase_prompts: <list of phases with appended text>
+   skip_phases: <list>
+   convention_skills_extra: <list>
+```
+
+If `sdlc.local.yaml` exists but parsing fails (invalid YAML, unknown top-level keys), print a warning and continue with the unmodified plugin profile:
+
+```
+⚠️ Failed to parse .claude/sdlc.local.yaml: <error>. Continuing with plugin defaults.
+```
+
+Do not abort — local override is optional, plugin profile is always usable as fallback.
+
+#### 1c. Build the canonical phase order
 
 ```
 business_analysis
@@ -133,7 +215,9 @@ business_analysis
   → documentation
 ```
 
-Skipped phases (per Step 0c) are removed from this order.
+Skipped phases are removed from this order. Sources of skips:
+- Step 0c skip-rules (e.g., typo-fix → skip BA)
+- Step 1b `skip_phases` from `sdlc.local.yaml` (e.g., external SAST → skip security)
 
 ### Step 2 — Generate task slug and prepare workspace
 
@@ -162,12 +246,25 @@ Inputs available for this phase:
 
 Convention skills to consider invoking: {convention_skills}
 
+Project-local command overrides (from .claude/sdlc.local.yaml, if present):
+{phase_command_overrides[phase] as a key:value list, or "none"}
+
+When the override specifies a runner (e.g. php_runner: php), use it INSTEAD of any plugin-defaulted prefix (e.g. "docker compose exec -T app php"). The local override is the source of truth for execution environment.
+
 External skill availability flags:
 {any CONTEXT.{plugin}_unavailable=true flags from Step 0a}
 
 Return COMPACT summary only (≤2-3K tokens). Detailed output goes to:
 docs/plans/{task_slug}/0X-{phase}.md
 ```
+
+**3b-pre. MUST PRINT VERBATIM** before spawning the agent:
+
+```
+▶ Phase {N}/{total}: {phase_name} → {agent_name} ({model_tier})
+```
+
+This is a contract with the user. Do not skip.
 
 **3c. Spawn the agent** via the `Agent` tool with `subagent_type` set to the agent name:
 
@@ -192,11 +289,13 @@ If validation fails, **do not proceed** — ask the user how to handle (retry, s
 
 ### Step 4 — Run post-pipeline checks
 
-For each command in `post_pipeline_checks` from the active profile, execute via `Bash`:
+For each command in `EFFECTIVE_PROFILE.post_pipeline_checks` (already merged with `sdlc.local.yaml` in Step 1b), execute via `Bash`:
 
 ```bash
 {command}
 ```
+
+If the array is empty (e.g., user disabled checks via `post_pipeline_checks: []` in `sdlc.local.yaml`) — print `Post-pipeline checks: skipped (empty list).` and proceed to Step 5.
 
 Capture exit code and last 30 lines of output. Save to `docs/plans/{task_slug}/05-post-checks.md`.
 
