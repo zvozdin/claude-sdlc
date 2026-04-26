@@ -7,8 +7,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/), versioning is [S
 
 ### Added
 - Initial repository scaffold (`marketplace.json`, LICENSE, README).
-- `core-sdlc-plugin@0.0.1` skeleton with vanilla stack profile.
-- `core-sdlc-plugin` Phase 1 contents: `pipeline-orchestrator` skill, `/sdlc:sdlc-start` command, 5 cost-tiered default agents (business-analyst, developer, qa-engineer, security-analyst, document-writer).
+- `sdlc@0.0.1` skeleton with vanilla stack profile.
+- `sdlc` Phase 1 contents: `pipeline-orchestrator` skill, `/sdlc:start` command, 5 cost-tiered default agents (business-analyst, developer, qa-engineer, security-analyst, document-writer).
 - `laravel-plugin@0.0.1` first stack provider: `stack.md` profile, `laravel-architect` and `artisan-specialist` agents, `laravel-conventions` and `eloquent-patterns` skills, `.mcp.json` for laravel-boost, Pint Stop-hook.
 
 ### Notes

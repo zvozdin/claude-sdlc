@@ -9,5 +9,5 @@
   "license": "GPL-3.0",
   "homepage": "https://github.com/AratKruglik/claude-sdlc",
   "keywords": ["laravel", "php", "inertia", "vue", "sdlc", "stack-provider"],
-  "dependencies": ["core-sdlc-plugin"]
+  "dependencies": ["sdlc"]
 }

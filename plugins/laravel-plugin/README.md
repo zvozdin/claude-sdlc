@@ -2,7 +2,7 @@
 
 Laravel + Inertia + Vue stack provider for the SDLC marketplace. Auto-detects Laravel projects (`composer.json` containing `"laravel/framework"`) and substitutes Laravel-specific agents into the pipeline.
 
-> Requires [`core-sdlc-plugin`](../core-sdlc-plugin/README.md) — installed automatically as a dependency.
+> Requires [`sdlc`](../sdlc/README.md) — installed automatically as a dependency.
 
 ## What this plugin adds
 
@@ -43,7 +43,7 @@ Post-pipeline:
 ```bash
 /plugin marketplace add AratKruglik/claude-sdlc
 /plugin install laravel-plugin@sdlc-marketplace
-# core-sdlc-plugin installs as a dependency
+# sdlc installs as a dependency
 ```
 
 ## Verifying
@@ -61,7 +61,7 @@ If you see only `vanilla`, your project doesn't have `"laravel/framework"` in `c
 ## Running
 
 ```bash
-/sdlc:sdlc-start "Add subscription billing with Stripe"
+/sdlc:start "Add subscription billing with Stripe"
 ```
 
 Auto-detects Laravel, substitutes `laravel-architect` for development, inserts the `database` phase after development, injects Laravel-specific guidance into security review, runs Pint + Pest + route:list at the end.
@@ -69,7 +69,7 @@ Auto-detects Laravel, substitutes `laravel-architect` for development, inserts t
 ## Override stack manually
 
 ```bash
-/sdlc:sdlc-start --stack=vanilla "Quick prototype"
+/sdlc:start --stack=vanilla "Quick prototype"
 # Bypasses Laravel-specific agents and runs the vanilla pipeline.
 ```
 

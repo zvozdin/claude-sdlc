@@ -8,9 +8,9 @@
   },
   "plugins": [
     {
-      "name": "core-sdlc-plugin",
-      "source": "./plugins/core-sdlc-plugin",
-      "description": "Universal SDLC orchestrator with auto-discovery of stack providers. Provides pipeline-orchestrator skill plus 5 cost-tiered default agents (BA, Dev, QA, Sec, Docs)."
+      "name": "sdlc",
+      "source": "./plugins/sdlc",
+      "description": "Universal SDLC orchestrator with auto-discovery of stack providers. Provides pipeline-orchestrator skill plus 5 cost-tiered default agents (BA, Dev, QA, Sec, Docs). Slash command: /sdlc:start \"<feature>\"."
     },
     {
       "name": "laravel-plugin",

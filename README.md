@@ -2,10 +2,6 @@
 
 Multi-stack AI-assisted SDLC pipelines built on the **Stack Provider Pattern**: a single core orchestrator runs the pipeline, framework plugins register themselves via declarative `stack.md` profiles. No core overrides, no slot registries, no copy-paste between stacks.
 
-> Architecture details: [`ARCHITECTURE.md`](./ARCHITECTURE.md)
-> Implementation plan: [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
-> External plugin dependencies (superpowers, etc.): [`DEPENDENCIES.md`](./DEPENDENCIES.md)
-
 ## Quickstart
 
 ```bash
@@ -21,7 +17,7 @@ Multi-stack AI-assisted SDLC pipelines built on the **Stack Provider Pattern**: 
 # 🎯 laravel   priority=100 (matches: composer.json + laravel/framework)
 
 # 4. Run the pipeline
-/sdlc:sdlc-start "Add subscription billing with Stripe"
+/sdlc:start "Add subscription billing with Stripe"
 # → Detected stack: laravel
 # → Phase 1/6: business_analysis (Opus)
 # → Phase 2/6: development → laravel-architect (Sonnet)
@@ -51,7 +47,7 @@ sdlc-marketplace/
 ├── .claude-plugin/
 │   └── marketplace.json
 ├── plugins/
-│   ├── core-sdlc-plugin/          ← orchestrator + 5 default agents
+│   ├── sdlc/          ← orchestrator + 5 default agents
 │   │   ├── stack.md               ← vanilla profile (priority: 0)
 │   │   ├── commands/
 │   │   ├── skills/pipeline-orchestrator/
@@ -62,17 +58,13 @@ sdlc-marketplace/
 │       ├── skills/
 │       ├── .mcp.json
 │       └── hooks/
-├── ARCHITECTURE.md
-├── IMPLEMENTATION_PLAN.md
-├── DEPENDENCIES.md
-└── README.md (this file)
 ```
 
 ## Status
 
 | Plugin | Version | Status |
 |---|---|---|
-| `core-sdlc-plugin` | 0.0.1 | Pre-release. Phase 1 (orchestrator + agents) complete. |
+| `sdlc` | 0.0.1 | Pre-release. Phase 1 (orchestrator + agents) complete. |
 | `laravel-plugin` | 0.0.1 | Pre-release. Phase 2 (first stack provider) complete. |
 
 v1.0 ships after Phase 4 (Polish: docs + `/sdlc:doctor` + GitHub Actions lint). See [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md).
@@ -81,7 +73,7 @@ v1.0 ships after Phase 4 (Polish: docs + `/sdlc:doctor` + GitHub Actions lint). 
 
 ```bash
 plugins/your-framework-plugin/
-├── .claude-plugin/plugin.json     # dependencies: core-sdlc-plugin
+├── .claude-plugin/plugin.json     # dependencies: sdlc
 ├── stack.md                        # detect rules + agents_per_phase + injections
 ├── agents/your-architect.md        # replaces vanilla developer
 └── skills/your-conventions/SKILL.md

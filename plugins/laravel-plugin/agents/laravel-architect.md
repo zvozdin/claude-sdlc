@@ -4,7 +4,7 @@ description: |
   Full-stack Laravel + Inertia + Vue implementer. Replaces the vanilla developer for projects matching the Laravel stack profile. Knows Action pattern, Form Requests, Policies, Eloquent relations, Inertia v2, Vue 3 Composition API.
 
   <example>
-  user invokes /sdlc:sdlc-start "Add subscription billing with Stripe" on Laravel project.
+  user invokes /sdlc:start "Add subscription billing with Stripe" on Laravel project.
   laravel-plugin/stack.md substitutes laravel-architect for the development phase.
   laravel-architect: creates Subscription model + migration, BillingAction (invokable class), StoreSubscriptionRequest, SubscriptionPolicy, Inertia BillingPage.vue with useForm.
   </example>
