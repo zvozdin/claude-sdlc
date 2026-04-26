@@ -56,7 +56,9 @@ This single rule replaces the per-agent bilingual trigger keywords that were use
 
 ### Step 0a — External plugin dependency preflight
 
-Read the `dependencies.plugins` array from `core-sdlc-plugin/.claude-plugin/plugin.json`.
+Read the `dependencies` array from `core-sdlc-plugin/runtime-dependencies.json`.
+
+> Note: Claude Code's native `plugin.json → dependencies` field is a simple array of plugin names used only for intra-marketplace install-time resolution (e.g., `laravel-plugin` declaring it needs `core-sdlc-plugin`). Our runtime preflight — for external plugins like `superpowers` from another marketplace, with per-skill granularity and policies — lives in a separate `runtime-dependencies.json` file to avoid conflicting with the native schema.
 
 For each declared dependency:
 1. Call `mcp__skills__list_skills` to enumerate available skills.
