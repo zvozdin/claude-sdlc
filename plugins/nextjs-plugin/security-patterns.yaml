@@ -1,0 +1,21 @@
+patterns:
+  - rule_name: nextjs_dangerous_html
+    substrings: ["dangerouslySetInnerHTML"]
+    paths: ["**/*.tsx", "**/*.jsx", "**/*.ts", "**/*.js"]
+    exclude_paths: ["**/*.test.*", "**/*.spec.*"]
+    reminder: "dangerouslySetInnerHTML bypasses React's XSS protection. Sanitize with DOMPurify before use, or restructure to use React elements."
+
+  - rule_name: nextjs_images_wildcard_domain
+    regex: "domains\\s*:\\s*\\[\\s*['\"]\\*['\"]"
+    paths: ["**/next.config.*"]
+    reminder: "images.domains: ['*'] disables the remote image allowlist. Specify exact hostnames in remotePatterns instead."
+
+  - rule_name: nextjs_public_secret_prefix
+    regex: "NEXT_PUBLIC_.*(?:SECRET|KEY|TOKEN|PASSWORD|PRIVATE)"
+    paths: ["**/.env*", "**/next.config.*"]
+    reminder: "NEXT_PUBLIC_ variables are bundled into the client bundle. Never prefix server-only secrets with NEXT_PUBLIC_."
+
+  - rule_name: nextjs_server_action_no_auth
+    regex: "\"use server\""
+    paths: ["**/*.ts", "**/*.tsx"]
+    reminder: "Server Actions are public HTTP endpoints. Verify the caller is authenticated at the top of every Server Action before any data access."

@@ -11,7 +11,8 @@ description: |
   - Writing technical documentation in /docs (out of scope for v1.0)
   - API documentation generation (separate concern)
   - Updating README beyond linking to the new feature (out of scope)
-model: claude-haiku-4-5
+model: haiku
+effort: low
 color: cyan
 tools: [Read, Glob, Grep, Bash, mcp__github__create_pull_request, mcp__github__add_comment_to_pending_review]
 ---

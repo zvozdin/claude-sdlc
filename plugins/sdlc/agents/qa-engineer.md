@@ -13,7 +13,8 @@ description: |
   - Writing implementation code (developer / framework-architect)
   - End-to-end browser tests in Laravel (Phase 5+ might add a separate qa-e2e agent)
   - Manual QA / exploratory testing (out of scope for this pipeline)
-model: claude-sonnet-4-6
+model: sonnet
+effort: medium
 color: yellow
 tools: [Read, Glob, Grep, Edit, Write, Bash]
 ---

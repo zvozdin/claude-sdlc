@@ -1,0 +1,21 @@
+patterns:
+  - rule_name: js_dynamic_code_execution
+    substrings: ["new Function("]
+    exclude_paths: ["**/*.test.*", "**/*.spec.*", "**/test/**", "**/tests/**"]
+    reminder: "new Function() executes arbitrary strings as code. Refactor to a static function or allowlist approach."
+
+  - rule_name: dom_injection_innerhtml
+    regex: "\\.innerHTML\\s*="
+    paths: ["**/*.js", "**/*.ts", "**/*.jsx", "**/*.tsx", "**/*.mjs"]
+    exclude_paths: ["**/*.test.*", "**/*.spec.*"]
+    reminder: "innerHTML assignment enables XSS. Use textContent for text, or sanitize with DOMPurify before setting innerHTML."
+
+  - rule_name: dom_injection_document_write
+    substrings: ["document.write("]
+    paths: ["**/*.js", "**/*.ts", "**/*.jsx", "**/*.tsx", "**/*.mjs"]
+    reminder: "document.write() is unsafe and deprecated. Use DOM APIs (createElement, appendChild) instead."
+
+  - rule_name: child_process_exec
+    regex: "(?:child_process|require\\(['\"]child_process['\"]\\)).*\\.exec\\s*\\("
+    paths: ["**/*.js", "**/*.ts", "**/*.mjs"]
+    reminder: "child_process.exec() passes input through a shell — vulnerable to injection. Use execFile() or spawn() with an args array."

@@ -11,7 +11,8 @@ description: |
   - Application logic (laravel-architect)
   - Test writing (qa-engineer)
   - Optimization of pre-existing tables not touched by the current feature
-model: claude-sonnet-4-6
+model: sonnet
+effort: low
 color: orange
 tools: [Read, Glob, Grep, Edit, Write, Bash]
 ---

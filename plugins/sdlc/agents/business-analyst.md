@@ -14,6 +14,7 @@ description: |
   - Writing tests (use qa-engineer)
   - Security review (use security-analyst)
 model: opus
+effort: high
 color: blue
 tools: [Read, Glob, Grep, WebSearch, WebFetch]
 ---

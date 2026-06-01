@@ -1,0 +1,25 @@
+{
+  "name": "nextjs-plugin",
+  "version": "0.0.2",
+  "description": "Next.js full-stack React framework stack provider for SDLC marketplace. Multi-aspect ownership (backend + frontend). App Router, Server Components, Server Actions, Route Handlers, ISR/SSG/SSR. Reuses TypeScript and npm skills from nodejs-plugin.",
+  "author": {
+    "name": "ROLIQUE",
+    "url": "https://github.com/ROLIQUE"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/ROLIQUE/claude-plugins",
+  "keywords": [
+    "nextjs",
+    "react",
+    "typescript",
+    "fullstack",
+    "ssr",
+    "rsc",
+    "sdlc",
+    "stack-provider"
+  ],
+  "dependencies": [
+    "sdlc",
+    "js-foundation"
+  ]
+}

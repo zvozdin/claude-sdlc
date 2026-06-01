@@ -50,14 +50,50 @@ This single rule replaces the per-agent bilingual trigger keywords that were use
 
 ### Step 0a — External plugin dependency preflight
 
-Read the `dependencies` array from the plugin-bundled `runtime-dependencies.json`. Resolve its location via the filesystem fallback used elsewhere in this skill — try in order, take the first that exists:
+Aggregate runtime dependencies from **every installed plugin's `runtime-dependencies.json`**, not just core. This allows framework plugins to declare their own external skill needs.
 
-1. `~/.claude/plugins/cache/sdlc/runtime-dependencies.json`
-2. `<repo>/plugins/sdlc/runtime-dependencies.json` (development checkout)
+> Note: Claude Code's native `plugin.json → dependencies` field is a simple array of plugin names used only for intra-marketplace install-time resolution (e.g., `nodejs-plugin` declaring it needs `sdlc`). Our runtime preflight — for external plugins like `superpowers` from another marketplace, with per-skill granularity and policies — lives in a separate `runtime-dependencies.json` file to avoid conflicting with the native schema.
 
-If neither path exists, treat as zero declared dependencies (skip the rest of Step 0a, set `CONTEXT.deps_preflight = {}`).
+**Algorithm (with cache fast-path):**
 
-> Note: Claude Code's native `plugin.json → dependencies` field is a simple array of plugin names used only for intra-marketplace install-time resolution (e.g., `laravel-plugin` declaring it needs `sdlc`). Our runtime preflight — for external plugins like `superpowers` from another marketplace, with per-skill granularity and policies — lives in a separate `runtime-dependencies.json` file to avoid conflicting with the native schema.
+The preflight result is cached in `~/.claude/.sdlc-deps-preflight.json` to avoid repeating 11+ tool calls on every `/sdlc:start` invocation.
+
+**Fast-path (cache hit):**
+
+1. If `$ARGUMENTS` contains `--force-preflight`, skip to full scan below.
+2. Read `~/.claude/.sdlc-deps-preflight.json` (1 tool call).
+3. If the file exists AND `all_satisfied == true`:
+   - Load `results` into `CONTEXT` (set `CONTEXT.{plugin}_unavailable = true` for any `"missing"` entries).
+   - Print: `🔧 Dependency preflight: cached (all satisfied)`
+   - Persist `deps_preflight` from cached `results` into telemetry with `"source": "cache"`.
+   - Skip to Step 0b. Done.
+4. If the file exists AND `all_satisfied == false`:
+   - Run an **abbreviated check**: only re-verify deps marked `"missing"` in the cache (not all `runtime-dependencies.json` files). If a previously-missing dep is now available, update the stamp.
+5. If the file does not exist, or `--force-preflight` was set → proceed to full scan.
+
+**Full scan (cache miss):**
+
+1. Use `Glob ~/.claude/plugins/cache/**/runtime-dependencies.json` to find all declarations.
+2. Read each file. Parse the `dependencies` array. Skip files with empty arrays silently.
+3. Merge declarations across plugins. If two plugins declare the same external dep with different policies, the strictest wins (`block` > `warn` > `graceful-degrade`).
+
+**Write cache stamp** (after full scan completes without `block` abort):
+
+Write `~/.claude/.sdlc-deps-preflight.json`:
+
+```json
+{
+  "checked_at": "<ISO timestamp>",
+  "results": { "<plugin_name>": "available"|"missing" },
+  "all_satisfied": true|false
+}
+```
+
+**Cache invalidation:**
+
+- `/sdlc:doctor` always runs a fresh full scan and rewrites the stamp (see `doctor.md`).
+- `--force-preflight` flag on `/sdlc:start` bypasses cache entirely.
+- If a `block`-policy dep caused an abort, no stamp is written — ensuring the next run always re-scans.
 
 #### 0a-1. Detect headless mode
 
@@ -114,6 +150,12 @@ For each entry where `status == "missing"`:
 
 Aggregate ALL `block` failures before aborting — print all JSON entries / install instructions, then exit. Single exit, multiple grievances.
 
+**Headless mode (`SDLC_NONINTERACTIVE=true`):**
+
+- `block` → exit 1 with machine-readable JSON `{ "missing": [...], "install_command": [...] }` written to stdout.
+- `warn` → write a single line to stderr, continue.
+- `graceful-degrade` → silent.
+
 #### 0a-5. MUST PRINT VERBATIM (interactive only)
 
 If `HEADLESS == false`, print this block AFTER policy enforcement (and only if it did not abort):
@@ -129,6 +171,12 @@ If `runtime-dependencies.json` had no entries, print:
 
 ```
 🔌 Dependency preflight: no external dependencies declared.
+```
+
+Or, on cache hit with all satisfied:
+
+```
+🔧 Dependency preflight: cached (all satisfied)
 ```
 
 If `HEADLESS == true`, suppress this print (warnings already went to stderr; success is silent).
@@ -245,6 +293,13 @@ Apply rules in order. A phase already removed by an earlier rule cannot be re-re
 | 4 | `lightweight-no-db` | `LOC_TOUCHED < 50` AND `HAS_MIGRATIONS == false` AND no path matches `/(auth\|password\|crypt\|secret\|token\|jwt\|session)/i` | Skip `security`. Inject an inline secret-leak check directive into the `development` phase prompt instead (developer scans diff for hardcoded secrets via `grep` for known patterns and reports findings in the compact summary). |
 
 If a skip-rule disables a phase that the active stack profile maps to a per-aspect agent map, ALL aspects of that phase are skipped (skip-rules operate at phase granularity, not aspect granularity).
+
+**Determinism rules:**
+
+- Apply skip-rules in the order above; once a rule fires, evaluate later rules against the remaining phase set.
+- A phase that is in `EFFECTIVE_PROFILE.skip_phases` (from `sdlc.local.yaml` Step 1b) is already removed; skip-rules cannot re-add it.
+- BA cannot be skipped if the user used `--force-ba` flag (reserved for future override; not yet implemented but reserve the flag to avoid breaking callers).
+- Skip-rules can be disabled globally with `--no-skip-rules` (reserved for future use; orchestrator parses but currently ignores). When telemetry shows a skip pattern correlated with QA/Security findings in subsequent runs, tighten the rule.
 
 #### 0c-3. Recording and announcing
 
@@ -472,6 +527,38 @@ Examples:
 
 This is a contract with the user. Do not skip.
 
+**3b-special. Development phase two-pass execution**
+
+The development phase runs in TWO passes with a user approval gate between them. This applies to every agent invocation within the development phase (each aspect in an aspect-aware fan-out runs its own two-pass cycle).
+
+**Pass 1 — Planning:**
+
+1. Use base prompt `development_plan` (instead of `development`).
+2. Spawn the agent. It reads the BA spec + codebase and writes an implementation plan to `docs/plans/{task_slug}/02-development-plan{-aspect_suffix}.md`.
+3. Agent returns a plan summary.
+
+**Approval gate:**
+
+1. Print the plan summary to the user.
+2. 🚨 **MUST PRINT VERBATIM:**
+   ```
+   📋 Implementation plan ready for {phase_name}{IF aspect-aware: " — " + aspect}.
+      Review: docs/plans/{task_slug}/02-development-plan{-aspect_suffix}.md
+   ```
+3. Ask the user: **approve** / **request changes** / **abort**.
+   - If **approve**: proceed to Pass 2.
+   - If **request changes**: re-dispatch Pass 1 with user feedback appended to the prompt. Repeat until approved or aborted.
+   - If **abort**: mark this aspect (or entire development phase if aspect-agnostic) as skipped in telemetry. Continue to the next phase.
+
+**Pass 2 — Implementation:**
+
+1. Use base prompt `development_implement` (instead of `development`).
+2. Spawn the agent. It reads the approved plan and implements the code.
+3. Agent writes the implementation report to `docs/plans/{task_slug}/02-development{-aspect_suffix}.md`.
+4. Standard validation (3e) applies: output must list files changed.
+
+For aspect-aware fan-out, the canonical order remains: `database → backend → frontend → testing`. Each aspect completes both passes before the next aspect begins (the plan for backend may depend on what database-aspect implemented).
+
 **3c. Spawn the agent** via the `Agent` tool with `subagent_type` set to the agent name:
 
 ```
@@ -501,7 +588,7 @@ Agent({
 Both fields go into the QA phase entry of `phases[]`.
 
 **3e. Validate phase output:**
-- BA phase: must contain user stories or scope bullets.
+- BA phase: must contain acceptance criteria or scope bullets.
 - Development phase: must list files changed.
 - QA phase: must report pass/fail counts.
 - Security phase: must report severity counts.
@@ -642,16 +729,31 @@ These are the canonical prompts. Stack profiles inject additional text via `phas
 ### business_analysis
 
 ```
-Analyze this feature request: $ARGUMENTS
+Verify and consolidate requirements for this feature: $ARGUMENTS
 
-Produce a deliverable that includes:
-1. Functional requirements (3-7 bullets)
-2. User stories in Gherkin (Given/When/Then), 3-5 of them
-3. Acceptance criteria per user story
-4. Data model sketch (entities, key fields, relationships)
-5. API contract sketch (endpoints, methods, payloads)
-6. Edge cases and error scenarios
-7. Open questions for stakeholders
+Your primary job is NOT generating requirements from scratch. Requirements come from
+BA/PO stakeholders. You must:
+
+1. Read the brief and ALL referenced sources (Jira, Confluence, docs). For each
+   requirement, track its source. Flag conflicts between sources.
+2. Scan the codebase (Glob/Grep/Read) to find existing code related to this feature:
+   models, controllers, migrations, API endpoints, tests, config.
+3. Validate each requirement against the codebase:
+   - Does this already exist (duplication)?
+   - Is it compatible with current architecture?
+   - What files/modules will be impacted?
+   - What constraints does the codebase impose?
+4. Build verifiable acceptance criteria tied to specific requirements.
+5. Prepare a context package for the dev phase: existing patterns to follow,
+   related code locations, codebase constraints.
+6. List edge cases, open questions, and gaps where requirements don't address
+   codebase realities.
+
+Produce a deliverable that also includes:
+- Functional requirements (3-7 bullets)
+- User stories in Gherkin (Given/When/Then), 3-5 of them
+- Data model sketch (entities, key fields, relationships)
+- API contract sketch (endpoints, methods, payloads)
 
 Read existing project docs and code as needed (Read, Glob, Grep tools).
 
@@ -659,28 +761,72 @@ Write the FULL detailed deliverable to: docs/plans/{task_slug}/01-business-analy
 
 RETURN ONLY a COMPACT summary (≤2K tokens):
 - 3-5 sentence scope description
-- User story titles (one line each)
-- 3-5 most important open questions
+- Consolidated requirements with sources (one line each)
+- Codebase impact: files affected, conflicts, gaps
+- Verifiable acceptance criteria (one line each)
+- Open questions (max 3)
 - Estimated complexity: small / medium / large
 ```
 
-### development
+### development_plan
 
 ```
-Implement the feature based on the spec at: docs/plans/{task_slug}/01-business-analysis.md
+Create an implementation plan for the feature based on the spec at:
+docs/plans/{task_slug}/01-business-analysis.md
+
+Step 1: If superpowers is available (no superpowers_unavailable flag),
+invoke superpowers:using-superpowers to discover all available skills
+and plugins.
+
+Step 2: Read the spec thoroughly — requirements, acceptance criteria,
+codebase impact analysis, context package for dev.
+
+Step 3: Explore the codebase (Glob/Grep/Read) to understand existing
+patterns, affected files, and constraints beyond what BA documented.
+
+Step 4: Build a detailed implementation plan:
+- Files to create (with purpose for each)
+- Files to modify (what changes and why)
+- Implementation order and dependencies between changes
+- Design decisions with rationale
+- Convention skills you will invoke during implementation: {convention_skills}
+- Risks and edge cases the plan must handle
 
 Follow project conventions found in CLAUDE.md and the active stack profile.
-Apply these convention skills if available: {convention_skills}
 
-If you encounter ambiguities not covered by the spec, choose the most conservative interpretation and note it in your summary.
+Write the plan to: docs/plans/{task_slug}/02-development-plan.md
+
+RETURN ONLY a COMPACT summary (≤2K tokens):
+- Planned files to create/modify (list)
+- Key design decisions (3-5 bullets)
+- Skills to invoke: [list]
+- Risks: [list or "none"]
+```
+
+### development_implement
+
+```
+Implement the feature based on the APPROVED plan at:
+docs/plans/{task_slug}/02-development-plan.md
+
+The plan was reviewed and approved by the developer. Follow it closely.
+If you encounter something the plan didn't anticipate, choose the most
+conservative interpretation and note it in your summary.
+
+Apply convention skills listed in the plan: {convention_skills}
+Invoke them proactively — don't just "consider" them.
+
+Follow project conventions found in CLAUDE.md and the active stack profile.
 
 Write a detailed implementation summary to: docs/plans/{task_slug}/02-development.md
-This file should include: list of files changed, key design decisions, deviations from spec, and any blockers encountered.
+This file should include: list of files changed, key design decisions,
+deviations from the approved plan (if any), and any blockers encountered.
 
 RETURN ONLY a COMPACT summary (≤3K tokens):
 - Files created (list)
 - Files modified (list)
 - 3-5 key decisions
+- Deviations from plan: [list or "none"]
 - Any blockers or open questions for the next phase
 ```
 
@@ -711,6 +857,8 @@ RETURN ONLY a COMPACT summary (≤2K tokens):
 ```
 Review the changes described in: docs/plans/{task_slug}/02-development.md
 Read the actual changed files via the file system.
+
+Security-guidance plugin active this session: {CONTEXT.security_guidance_available ?? false}
 
 Focus on OWASP Top 10:
 - Injection (SQL, command, LDAP, XPath)

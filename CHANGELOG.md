@@ -3,7 +3,33 @@
 All notable changes to the SDLC marketplace are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/), versioning is [SemVer](https://semver.org/) per plugin.
 
-## [Unreleased]
+## [Unreleased] — marketplace v0.1.0
+
+### Added (marketplace port + cost optimization)
+- **8 нових стек-плагінів** (ported з Rolique/claude-plugins v0.1.1): `js-foundation`, `nodejs-plugin`, `nestjs-plugin`, `nextjs-plugin`, `react-plugin`, `vue-plugin`, `angular-plugin`, `react-native-plugin`. Маркетплейс з 2 → 10 локальних плагінів.
+- **`schemas/`** — JSON-схеми для валідації `plugin.json` і frontmatter `stack.md` (`plugin.schema.json`, `stack.schema.json`).
+- **`/sdlc:batch`** slash-команда — паралельне виконання SDLC-пайплайну для кількох задач, ізольовані worktree, detect конфліктів файлів.
+- **`/sdlc:security-init`** slash-команда — матеріалізація стек-специфічного `security-patterns.yaml` і `claude-security-guidance.md` у поточний проєкт для `security-guidance` плагіна.
+- **`superpowers` і `security-guidance`** як зовнішні залежності в `marketplace.json` (записи для external plugins від `obra/superpowers` і `anthropics/claude-plugins-official`).
+- **`effort` поле** в frontmatter всіх 14 агентів — перший usage поля, яке перекриває session-рівень reasoning-бюджету.
+
+### Changed (cost-optimization re-tier)
+- **`marketplace.json` v0.0.2 → v0.1.0**: додано 12 записів (2 зовнішніх + 8 нових плагінів), оновлено descriptions з model/effort тарифами.
+- **Re-tier усіх агентів** — всі `model` поля перейшли на аліаси (більше ніяких застарілих пінувань `claude-opus-4-7`). Додано `effort` до кожного агента:
+  - `business-analyst`, `security-analyst`: `opus` + `effort: high` (помилки тут каскадно дорогі, малий об'єм токенів)
+  - усі 9 архітекторів + `developer` + `qa-engineer`: `sonnet` + `effort: medium` (виконавча фаза, специфікація задає обмеження)
+  - `artisan-specialist`: `sonnet` + `effort: low` (механічна DB-робота: типи/індекси/factories)
+  - `document-writer`: `haiku` + `effort: low` (структурований вивід із відомих фактів)
+- **Rolique all-Opus mandate скасовано**: всі 7 Rolique-архітекторів знижено з `opus` → `sonnet` + `effort: medium`. Обґрунтування в тілі кожного агента оновлено.
+- **Злиття `pipeline-orchestrator/SKILL.md`** (807 рядків → 955 рядків): інтегровано з Rolique-версії — multi-plugin runtime-dependencies aggregation, preflight cache fast-path, two-pass development approval gate, `--force-ba`/`--no-skip-rules` flag reservations; збережено наявні cost/skip-rule секції і prompt-caching discipline.
+
+### Notes
+- `temperature` не налаштовується per-subagent у Claude Code — в плані опускаємо. Reasoning-бюджет керується виключно полем `effort`.
+- Аліаси (`opus`/`sonnet`/`haiku`) завжди беруть актуальну версію тіру; ручне оновлення при виходах нових моделей не потрібне.
+
+---
+
+## [Pre-release]
 
 ### Added
 - Initial repository scaffold (`marketplace.json`, LICENSE, README).

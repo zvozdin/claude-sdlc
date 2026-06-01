@@ -1,6 +1,6 @@
 {
   "name": "sdlc-marketplace",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "Multi-stack AI-assisted SDLC pipelines for Claude Code. Stack Provider Pattern: core owns the pipeline, framework plugins register themselves via stack.md profiles.",
   "owner": {
     "name": "Oleksii Kruhlyk",
@@ -8,14 +8,64 @@
   },
   "plugins": [
     {
+      "name": "superpowers",
+      "source": "obra/superpowers",
+      "description": "Runtime dependency. Enables richer reasoning in BA (brainstorming), QA (test-driven-development), and all architect agents (verification-before-completion). Pipeline degrades gracefully without it."
+    },
+    {
+      "name": "security-guidance",
+      "source": "anthropics/claude-plugins-official",
+      "description": "Optional external dependency (official Anthropic). Hooks-based in-session security review: per-edit pattern match, end-of-turn diff review, commit review. Pipeline runs without it; the security phase still does full OWASP."
+    },
+    {
       "name": "sdlc",
       "source": "./plugins/sdlc",
-      "description": "Universal SDLC orchestrator with auto-discovery of stack providers. Provides pipeline-orchestrator skill plus 5 cost-tiered default agents (BA, Dev, QA, Sec, Docs). Slash command: /sdlc:start \"<feature>\"."
+      "description": "Universal SDLC orchestrator with auto-discovery of stack providers. Provides pipeline-orchestrator skill plus 5 cost-tiered default agents (BA Opus/high, Dev Sonnet/medium, QA Sonnet/medium, Sec Opus/high, Docs Haiku/low). Slash commands: /sdlc:start, /sdlc:batch, /sdlc:doctor, /sdlc:list-stacks, /sdlc:security-init."
+    },
+    {
+      "name": "js-foundation",
+      "source": "./plugins/js-foundation",
+      "description": "Shared JavaScript/TypeScript foundation skills (typescript-patterns + npm-patterns). No agent, no stack profile. Referenced cross-plugin by every JS/TS framework provider in the marketplace."
+    },
+    {
+      "name": "nodejs-plugin",
+      "source": "./plugins/nodejs-plugin",
+      "description": "Node.js backend stack provider for Express/Fastify/Koa/plain Node.js projects. Adds node-architect agent (Sonnet/medium) and node-conventions skill. Reuses TypeScript and npm skills from js-foundation. Composes with frontend plugins via aspect resolution."
+    },
+    {
+      "name": "nestjs-plugin",
+      "source": "./plugins/nestjs-plugin",
+      "description": "NestJS opinionated backend stack provider. Adds nest-architect agent (Sonnet/medium) covering REST + ORM (TypeORM/Prisma/Mongoose) + GraphQL + WebSockets + Microservices. Reuses TypeScript and npm skills from js-foundation."
+    },
+    {
+      "name": "nextjs-plugin",
+      "source": "./plugins/nextjs-plugin",
+      "description": "Next.js full-stack React framework. Multi-aspect ownership (backend + frontend, priority=250). App Router, Server Components, Server Actions, Route Handlers, ISR/SSG/SSR. Adds nextjs-architect agent (Sonnet/medium). Reuses TypeScript and npm skills from js-foundation."
+    },
+    {
+      "name": "react-plugin",
+      "source": "./plugins/react-plugin",
+      "description": "React SPA frontend stack provider (priority=150). Components, hooks, state management, routing, react-hook-form, RTL+Vitest+Playwright. Adds react-architect agent (Sonnet/medium). Composes with backend plugins via aspect resolution."
+    },
+    {
+      "name": "vue-plugin",
+      "source": "./plugins/vue-plugin",
+      "description": "Vue 3 SPA frontend stack provider (priority=150). Composition API, Pinia, Vue Router v4, vee-validate + zod, Vitest + @vue/test-utils. Adds vue-architect agent (Sonnet/medium). Vue 3 primary; Vue 2 fallback notes."
+    },
+    {
+      "name": "angular-plugin",
+      "source": "./plugins/angular-plugin",
+      "description": "Angular 18-21 SPA frontend stack provider (priority=200). Standalone + NgModule equally, signals + NgRx, typed Reactive Forms, Angular Router. Adds angular-architect agent (Sonnet/medium). Reuses TypeScript and npm skills from js-foundation."
+    },
+    {
+      "name": "react-native-plugin",
+      "source": "./plugins/react-native-plugin",
+      "description": "React Native mobile stack provider (priority=300). Both Expo (managed/dev-client/EAS) and bare workflows. React Navigation v7 + Expo Router, AsyncStorage/MMKV, Jest + RTL Native. Adds rn-architect agent (Sonnet/medium). Wins over react-plugin on RN projects."
     },
     {
       "name": "laravel-plugin",
       "source": "./plugins/laravel-plugin",
-      "description": "Laravel + Inertia + Vue stack provider. Registers Laravel profile via stack.md; provides laravel-architect and artisan-specialist agents plus laravel-conventions and eloquent-patterns skills."
+      "description": "Laravel + Inertia + Vue stack provider (priority=100). Registers Laravel profile via stack.md; provides laravel-architect (Sonnet/medium) and artisan-specialist (Sonnet/low) agents plus laravel-conventions and eloquent-patterns skills. Extra database phase after development."
     }
   ]
 }

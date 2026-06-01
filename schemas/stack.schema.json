@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ROLIQUE/claude-plugins/schemas/stack.schema.json",
+  "title": "Stack Profile Frontmatter",
+  "description": "Schema for the YAML frontmatter of plugins/<name>/stack.md files. The frontmatter is extracted from between the first --- markers and validated as a JSON object.",
+  "type": "object",
+  "required": ["stack", "priority", "detect"],
+  "additionalProperties": false,
+  "properties": {
+    "stack": {
+      "type": "string",
+      "description": "Unique stack name. Lowercase, alphanumeric + hyphens.",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "minLength": 2,
+      "maxLength": 40
+    },
+    "priority": {
+      "type": "integer",
+      "description": "0 = vanilla fallback. 100+ = framework. Higher wins per aspect.",
+      "minimum": 0,
+      "maximum": 1000
+    },
+    "aspects": {
+      "type": "array",
+      "description": "Aspects this profile owns. Determines per-aspect winner resolution.",
+      "items": {
+        "enum": ["backend", "frontend", "database", "infra", "testing", "messaging"]
+      },
+      "uniqueItems": true,
+      "minItems": 0,
+      "maxItems": 6
+    },
+    "detect": {
+      "type": "object",
+      "description": "Auto-detect rules. Use `any` for OR, `all` for AND.",
+      "oneOf": [
+        { "required": ["any"] },
+        { "required": ["all"] }
+      ],
+      "properties": {
+        "any": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/detectRule" },
+          "minItems": 1
+        },
+        "all": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/detectRule" },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "detectRule": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Wildcard '*' for vanilla profiles only.",
+          "enum": ["*"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "file_exists": {
+              "type": "string",
+              "description": "Path (relative to project root) that must exist."
+            }
+          },
+          "required": ["file_exists"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "file_contains": {
+              "type": "object",
+              "required": ["path", "pattern"],
+              "properties": {
+                "path": { "type": "string" },
+                "pattern": { "type": "string" }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": ["file_contains"],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

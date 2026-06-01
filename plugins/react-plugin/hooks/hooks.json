@@ -1,0 +1,17 @@
+{
+  "_comment": "Hooks for react-plugin. PostToolUse: format and lint changed TS/JS/JSX/TSX files via ESLint + Prettier when present. Skips silently when not configured.",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=\"$CLAUDE_FILE\"; case \"$f\" in *.tsx|*.ts|*.jsx|*.js|*.mts|*.cts|*.mjs|*.cjs) [ -f package.json ] && grep -q '\"prettier\"' package.json 2>/dev/null && npx --no-install prettier --write \"$f\" 2>/dev/null; [ -f package.json ] && grep -q '\"eslint\"' package.json 2>/dev/null && npx --no-install eslint --fix \"$f\" 2>/dev/null; exit 0;; esac",
+            "timeout": 30000
+          }
+        ]
+      }
+    ]
+  }
+}

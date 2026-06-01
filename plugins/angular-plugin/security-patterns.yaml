@@ -1,0 +1,11 @@
+patterns:
+  - rule_name: angular_bypass_security_trust
+    regex: "bypassSecurityTrust(?:Html|Script|Style|Url|ResourceUrl)\\s*\\("
+    paths: ["**/*.ts"]
+    exclude_paths: ["**/*.spec.ts"]
+    reminder: "bypassSecurityTrust* disables Angular's XSS sanitization. Ensure input is fully controlled or sanitize externally before calling. Document the justification."
+
+  - rule_name: angular_innerhtml_binding
+    regex: "\\[innerHTML\\]\\s*="
+    paths: ["**/*.html", "**/*.ts"]
+    reminder: "[innerHTML] binding renders raw HTML. Angular sanitizes it, but bypassSecurityTrustHtml upstream removes that protection. Verify the data source."

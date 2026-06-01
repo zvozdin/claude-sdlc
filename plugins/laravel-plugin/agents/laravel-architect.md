@@ -14,7 +14,8 @@ description: |
   - Test writing (qa-engineer)
   - Filament admin panels (out of scope for v0.0.1 — would be a sub-stack plugin in V2)
   - Pure Vue/frontend work in non-Laravel projects (use vanilla developer or a frontend-specific stack provider)
-model: claude-sonnet-4-6
+model: sonnet
+effort: medium
 color: blue
 tools: [Read, Glob, Grep, Edit, Write, Bash]
 ---

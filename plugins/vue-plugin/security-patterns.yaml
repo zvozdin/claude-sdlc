@@ -1,0 +1,11 @@
+patterns:
+  - rule_name: vue_v_html
+    regex: "v-html\\s*="
+    paths: ["**/*.vue", "**/*.ts", "**/*.js"]
+    exclude_paths: ["**/*.test.*", "**/*.spec.*"]
+    reminder: "v-html renders raw HTML — XSS risk with user-controlled content. Sanitize with DOMPurify first or restructure to use template expressions."
+
+  - rule_name: vue_dom_props_innerhtml
+    regex: "domProps\\s*:\\s*\\{[^}]*innerHTML"
+    paths: ["**/*.vue", "**/*.ts", "**/*.js"]
+    reminder: "domProps.innerHTML renders raw HTML. Sanitize with DOMPurify or use Vue's slot/template system."

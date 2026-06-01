@@ -1,0 +1,23 @@
+{
+  "name": "nodejs-plugin",
+  "version": "0.0.2",
+  "description": "Node.js backend stack provider for SDLC marketplace. Adds node-architect agent and node-conventions skill for Express/Fastify/Koa/plain Node.js projects. Reuses TypeScript and npm skills from js-foundation. Composes with frontend plugins (react, vue, angular) via aspect resolution.",
+  "author": {
+    "name": "ROLIQUE",
+    "url": "https://github.com/ROLIQUE"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/ROLIQUE/claude-plugins",
+  "keywords": [
+    "nodejs",
+    "express",
+    "fastify",
+    "koa",
+    "sdlc",
+    "stack-provider"
+  ],
+  "dependencies": [
+    "sdlc",
+    "js-foundation"
+  ]
+}
