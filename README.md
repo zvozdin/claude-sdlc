@@ -127,10 +127,23 @@ Aspects are dispatched in canonical order: `database → backend → frontend �
 | Command | Purpose |
 |---|---|
 | `/sdlc:start "feature"` | Run the full 5-phase pipeline |
+| `/sdlc:start "feature" --stack=NAME` | Force a specific stack instead of auto-detecting |
 | `/sdlc:batch "task1" "task2"` | Run pipelines in parallel for multiple tasks (isolated worktrees) |
 | `/sdlc:list-stacks` | Show detected stack profiles and their priorities |
 | `/sdlc:doctor` | Preflight check: dependency check, stack detection, cost baseline |
 | `/sdlc:security-init` | Materialize security-patterns.yaml for the security-guidance plugin |
+
+### Running a specific stack manually
+
+By default `/sdlc:start` auto-detects the stack by scanning the project files. To override:
+
+```bash
+/sdlc:start "add user authentication" --stack=laravel-plugin
+/sdlc:start "add user authentication" --stack=nestjs-plugin
+/sdlc:start "add user authentication" --stack=react-plugin
+```
+
+Use `/sdlc:list-stacks` first to see available stack names and which one would be selected automatically.
 
 ---
 
