@@ -3,11 +3,11 @@
   "version": "0.0.2",
   "description": "Node.js backend stack provider for SDLC marketplace. Adds node-architect agent and node-conventions skill for Express/Fastify/Koa/plain Node.js projects. Reuses TypeScript and npm skills from js-foundation. Composes with frontend plugins (react, vue, angular) via aspect resolution.",
   "author": {
-    "name": "ROLIQUE",
-    "url": "https://github.com/ROLIQUE"
+    "name": "Oleksii Kruhlyk",
+    "url": "https://github.com/AratKruglik"
   },
   "license": "MIT",
-  "homepage": "https://github.com/ROLIQUE/claude-plugins",
+  "homepage": "https://github.com/AratKruglik/claude-sdlc",
   "keywords": [
     "nodejs",
     "express",

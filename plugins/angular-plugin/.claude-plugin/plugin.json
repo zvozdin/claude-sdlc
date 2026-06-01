@@ -3,11 +3,11 @@
   "version": "0.0.2",
   "description": "Angular 18-21 SPA frontend stack provider for SDLC marketplace. Standalone components + NgModule equally, signals + services + NgRx (Store/Component Store/Signals), Reactive Forms (typed), Angular Router with functional guards, TestBed + component harnesses + Angular Testing Library. Modern era (signal-first, control flow @if/@for/@switch) with legacy NgModule fallback. Angular Universal (SSR) pointer-only — SPA focus.",
   "author": {
-    "name": "ROLIQUE",
-    "url": "https://github.com/ROLIQUE"
+    "name": "Oleksii Kruhlyk",
+    "url": "https://github.com/AratKruglik"
   },
   "license": "MIT",
-  "homepage": "https://github.com/ROLIQUE/claude-plugins",
+  "homepage": "https://github.com/AratKruglik/claude-sdlc",
   "keywords": [
     "angular",
     "spa",
