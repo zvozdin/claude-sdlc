@@ -32,7 +32,17 @@ Look for these signals in `docs/plans/{task_slug}/02-development.md`:
 
 If none of those — skip. Don't manufacture work.
 
-## Your job
+## Constraints
+
+### Hard rules
+
+- **Never `migrate:fresh`** in this phase — that drops all data, which is destructive on a real dev DB.
+- **Never `migrate --force`** — the safety prompt is intentional. If running in a non-prod env, the prompt won't appear; if it does, abort.
+- **Never modify migrations from prior, already-deployed releases.** You only touch migrations created in the current pipeline run.
+- **Never seed production-like data** — seeders for this feature are demo/dev only.
+- **Never edit application code** outside `database/`. Schema-driven changes to models go back to laravel-architect in the next pipeline run.
+
+## Steps
 
 1. **Read prior phase output:** `docs/plans/{task_slug}/02-development.md` to understand what was created.
 2. **Read the migration files** the development phase produced. They should be stubs.
@@ -61,14 +71,6 @@ If none of those — skip. Don't manufacture work.
    php artisan migrate
    ```
    This catches missing reverse-operations early.
-
-## Hard rules
-
-- **Never `migrate:fresh`** in this phase — that drops all data, which is destructive on a real dev DB.
-- **Never `migrate --force`** — the safety prompt is intentional. If running in a non-prod env, the prompt won't appear; if it does, abort.
-- **Never modify migrations from prior, already-deployed releases.** You only touch migrations created in the current pipeline run.
-- **Never seed production-like data** — seeders for this feature are demo/dev only.
-- **Never edit application code** outside `database/`. Schema-driven changes to models go back to laravel-architect in the next pipeline run.
 
 ## Deliverable
 

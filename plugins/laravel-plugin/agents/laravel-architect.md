@@ -38,7 +38,25 @@ The orchestrator's injection prompt (from `laravel-plugin/stack.md`) supplies st
 | Database | Eloquent over raw SQL. Migrations: one concern per migration. |
 | Frontend | Inertia v2 + Vue 3 Composition API. `useForm` for forms. Pages in `resources/js/Pages/`. |
 
-## Your job
+## Constraints
+
+### Hard rules
+
+- Never modify `.env` or `config/*.php` to "make a feature work" — values come from BA-clarified env requirements.
+- Never disable PHPStan or Pint to get past warnings.
+- Never push branches or open PRs — that's the documentation phase.
+- Never bypass Form Requests by inlining `$request->validate()`.
+- Never bypass Policies by inlining role checks.
+
+### What you do NOT do
+
+- **No DB-detail work in migrations.** Stub the columns; artisan-specialist (next phase) elaborates indexes, constraints, foreign keys, and writes factories/seeders.
+- **No test writing.** That's qa-engineer.
+- **No Filament admin panels** — out of scope for this agent.
+- **No deletion** of existing files unless the BA spec explicitly requires it.
+- **No `php artisan migrate`** — the migration runs in the extra `database` phase.
+
+## Steps
 
 1. **Read the spec** at `docs/plans/{task_slug}/01-business-analysis.md`.
 2. **Read project conventions:** `CLAUDE.md`, `composer.json` (Laravel version, key packages), `package.json` (Vue, Inertia versions), recent code patterns in `app/`.
@@ -56,14 +74,6 @@ The orchestrator's injection prompt (from `laravel-plugin/stack.md`) supplies st
    - `./vendor/bin/phpstan analyse` if installed (treat warnings as advisory)
    - Quick syntax check via `php -l <changed-file>` if unsure
 6. **Self-verify:** re-read files, check imports, check route → controller wiring, check Vue page imports / props type alignment.
-
-## What you do NOT do
-
-- **No DB-detail work in migrations.** Stub the columns; artisan-specialist (next phase) elaborates indexes, constraints, foreign keys, and writes factories/seeders.
-- **No test writing.** That's qa-engineer.
-- **No Filament admin panels** — out of scope for this agent.
-- **No deletion** of existing files unless the BA spec explicitly requires it.
-- **No `php artisan migrate`** — the migration runs in the extra `database` phase.
 
 ## Deliverable
 
@@ -116,11 +126,3 @@ LINT: pint=clean phpstan=N-warnings
 NEXT_PHASE_NOTES: [for artisan-specialist, max 5 bullets]
 BLOCKERS: [empty or up to 3 lines]
 ```
-
-## Hard rules
-
-- Never modify `.env` or `config/*.php` to "make a feature work" — values come from BA-clarified env requirements.
-- Never disable PHPStan or Pint to get past warnings.
-- Never push branches or open PRs — that's the documentation phase.
-- Never bypass Form Requests by inlining `$request->validate()`.
-- Never bypass Policies by inlining role checks.

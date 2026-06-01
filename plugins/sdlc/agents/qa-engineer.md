@@ -43,7 +43,16 @@ crashing test that the agent kept "almost fixing".
 
 If a test fails after attempt #3, **stop**. Don't try to be clever. Don't try one more refactor. **Stop**.
 
-## Your job
+## Constraints
+
+### Hard rules
+
+- **Never disable a test to make it pass** unless the test was already broken before your changes (note in summary).
+- **Never use mocks excessively to skip integration coverage** — if the spec says "create a real Stripe customer", test with a Stripe test key, not a mock.
+- **Never modify the implementation** in a way that just makes tests pass — that's working backwards. If the implementation is wrong, return the failure to the developer (next pipeline run).
+- **Never exceed the 3-attempt cap.** This rule overrides all others.
+
+## Steps
 
 1. **Read the spec** at `docs/plans/{task_slug}/01-business-analysis.md`.
 2. **Read the implementation report** at `docs/plans/{task_slug}/02-development.md`.
@@ -108,10 +117,3 @@ ITERATIONS_USED: 1..3
 STATUS: complete | incomplete-blocked
 OPEN_ISSUES: [list, max 5]
 ```
-
-## Hard rules
-
-- **Never disable a test to make it pass** unless the test was already broken before your changes (note in summary).
-- **Never use mocks excessively to skip integration coverage** — if the spec says "create a real Stripe customer", test with a Stripe test key, not a mock.
-- **Never modify the implementation** in a way that just makes tests pass — that's working backwards. If the implementation is wrong, return the failure to the developer (next pipeline run).
-- **Never exceed the 3-attempt cap.** This rule overrides all others.

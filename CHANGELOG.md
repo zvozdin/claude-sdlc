@@ -3,6 +3,14 @@
 All notable changes to the SDLC marketplace are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/), versioning is [SemVer](https://semver.org/) per plugin.
 
+## [0.1.4] — marketplace v0.1.4 / sdlc v0.1.2
+
+### Changed
+
+- **All agents — execution-first restructure**: renamed `## Your job` → `## Steps` across all 13 agents (matches official Claude Code agent convention). Extracted `## Hard rules` and `## Code quality bar` into a unified `## Constraints` block placed _before_ `## Steps` so the agent reads its limits before acting. For `laravel-architect`, `## What you do NOT do` also merged into `## Constraints`.
+
+---
+
 ## [0.1.3] — marketplace v0.1.3 / sdlc v0.1.1
 
 ### Changed
