@@ -2,19 +2,19 @@
 
 Multi-stack AI-assisted SDLC pipelines built on the **Stack Provider Pattern**: a single core orchestrator runs the pipeline, framework plugins register themselves via declarative `stack.md` profiles. No core overrides, no slot registries, no copy-paste between stacks.
 
-**v0.1.0** — 10 плагінів: 1 core + 1 shared lib + 7 JS/TS стеків + Laravel. Cost-optimized: model tiering + `effort` per-subagent.
+**v0.1.0** — 10 plugins: 1 core + 1 shared lib + 7 JS/TS stacks + Laravel. Cost-optimized: model tiering + `effort` per-subagent.
 
 ---
 
 ## Quickstart
 
 ```bash
-# 1. Додати маркетплейс
+# 1. Add the marketplace
 /plugin marketplace add AratKruglik/claude-sdlc
 
-# 2. Встановити потрібний стек-плагін (sdlc — автоматично як dependency)
+# 2. Install the stack plugin you need (sdlc core is installed automatically as a dependency)
 /plugin install laravel-plugin@sdlc-marketplace
-# або для JS/TS проєктів:
+# or for JS/TS projects:
 /plugin install nodejs-plugin@sdlc-marketplace   # Express/Fastify/Koa
 /plugin install nestjs-plugin@sdlc-marketplace   # NestJS
 /plugin install nextjs-plugin@sdlc-marketplace   # Next.js (full-stack)
@@ -23,33 +23,33 @@ Multi-stack AI-assisted SDLC pipelines built on the **Stack Provider Pattern**: 
 /plugin install angular-plugin@sdlc-marketplace  # Angular 18-21
 /plugin install react-native-plugin@sdlc-marketplace  # React Native / Expo
 
-# 3. Перевірка
+# 3. Verify
 /sdlc:doctor
 /sdlc:list-stacks
 
-# 4. Запуск
+# 4. Run
 /sdlc:start "Add subscription billing with Stripe"
 ```
 
 ---
 
-## Принцип роботи: Stack Provider Pattern
+## How It Works: Stack Provider Pattern
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    sdlc (core)                               │
 │  ┌──────────────────────────────────────────────────────┐  │
-│  │  pipeline-orchestrator (skill) — НЕ ЗМІНЮЄТЬСЯ        │  │
+│  │  pipeline-orchestrator (skill) — NEVER CHANGES        │  │
 │  │                                                       │  │
 │  │  Phase 1: BA          → core's business-analyst       │  │
-│  │  Phase 2: Dev         → ⚡ DISPATCH до stack provider │  │
-│  │  Phase X: extra       → ⚡ стек-специфічні фази       │  │
+│  │  Phase 2: Dev         → ⚡ DISPATCH to stack provider │  │
+│  │  Phase X: extra       → ⚡ stack-specific phases      │  │
 │  │  Phase N-2: QA        → core's qa-engineer            │  │
 │  │  Phase N-1: Security  → core's security-analyst       │  │
 │  │  Phase N: Docs/PR     → core's document-writer        │  │
 │  └──────────────────────────────────────────────────────┘  │
 │                            ▲                                │
-│                            │ читає stack.md profiles        │
+│                            │ reads stack.md profiles        │
 └────────────────────────────┼────────────────────────────────┘
                              │
     ┌────────────────────────┼───────────────────────────┐
@@ -61,21 +61,21 @@ Multi-stack AI-assisted SDLC pipelines built on the **Stack Provider Pattern**: 
 └───────┘  └─────────┘ └─────────┘  └─────────┘  └─────────┘
 ```
 
-**Ключові принципи:**
+**Key principles:**
 
-1. **Core ніколи не змінюється.** Логіка пайплайну живе лише в `pipeline-orchestrator/SKILL.md`.
-2. **Плагіни реєструють себе** через `stack.md` frontmatter — оголошують правила auto-detection, priority, агентів per-phase і convention skills.
-3. **Per-aspect розподіл.** Проєкт може мати кілька аспектів (backend + frontend + database). Кожен аспект отримує свого спеціаліста.
-4. **Priority wins.** Коли кілька профілів матчаться, перемагає найвищий priority.
+1. **Core never changes.** Pipeline logic lives exclusively in `pipeline-orchestrator/SKILL.md`.
+2. **Plugins register themselves** via `stack.md` frontmatter — they declare auto-detection rules, priority, agents per phase, and convention skills.
+3. **Per-aspect dispatch.** A project can have multiple aspects (backend + frontend + database). Each aspect gets its own specialist.
+4. **Priority wins.** When multiple profiles match, the highest priority takes over.
 
-### Таблиця пріоритетів стеків
+### Stack Priority Table
 
-| Priority | Плагін | Аспекти | Detect |
+| Priority | Plugin | Aspects | Detect |
 |---|---|---|---|
-| 0 | `vanilla` (sdlc) | — | `*` (завжди) |
+| 0 | `vanilla` (sdlc) | — | `*` (always matches) |
 | 100 | `nodejs-plugin` | backend | `package.json` + express/fastify/koa/... |
 | 100 | `laravel-plugin` | backend, database | `composer.json` + `laravel/framework` |
-| 150 | `react-plugin` | frontend | `package.json` + `react` (без `next`, `react-native`) |
+| 150 | `react-plugin` | frontend | `package.json` + `react` (without `next`, `react-native`) |
 | 150 | `vue-plugin` | frontend | `package.json` + `vue` |
 | 200 | `nestjs-plugin` | backend, database | `package.json` + `@nestjs/core` |
 | 200 | `angular-plugin` | frontend | `package.json` + `@angular/core` |
@@ -84,14 +84,14 @@ Multi-stack AI-assisted SDLC pipelines built on the **Stack Provider Pattern**: 
 
 ---
 
-## Фази пайплайну
+## Pipeline Phases
 
-### Стандартний 5-фазовий пайплайн
+### Standard 5-phase pipeline
 
 ```
 Phase 1: BA → business-analyst (opus/high)
           ↓ output: docs/plans/{slug}/01-business-analysis.md
-Phase 2: Dev → [стек-агент] (sonnet/medium)
+Phase 2: Dev → [stack agent] (sonnet/medium)
           ↓ output: docs/plans/{slug}/02-development.md
 Phase 3: QA → qa-engineer (sonnet/medium, max 3 attempts)
           ↓ output: docs/plans/{slug}/03-qa.md
@@ -101,96 +101,96 @@ Phase 5: Docs → document-writer (haiku/low)
           ↓ output: PR on GitHub
 ```
 
-### Приклад: Laravel (6 фаз)
+### Example: Laravel (6 phases)
 
 ```
 Phase 1: BA → business-analyst
-Phase 2: Dev/backend → laravel-architect    (extra: aspect=backend)
-Phase 3: Dev/database → artisan-specialist  (extra phase after backend)
+Phase 2: Dev/backend  → laravel-architect    (aspect=backend)
+Phase 3: Dev/database → artisan-specialist   (extra phase after backend)
 Phase 4: QA → qa-engineer
 Phase 5: Security → security-analyst
 Phase 6: Docs → document-writer
 ```
 
-### Per-aspect dispatch (multi-framework проєкти)
+### Per-aspect dispatch (multi-framework projects)
 
-Якщо проєкт — це, наприклад, Node.js backend + React frontend:
+For a project with a Node.js backend and a React frontend:
 - Phase 2/backend → `node-architect`
-- Phase 2/frontend → `react-architect` (окремий прогін)
+- Phase 2/frontend → `react-architect` (separate run)
 
-Аспекти в canonical order: `database → backend → frontend → testing`.
+Aspects are dispatched in canonical order: `database → backend → frontend → testing`.
 
 ---
 
-## Команди
+## Commands
 
-| Команда | Призначення |
+| Command | Purpose |
 |---|---|
-| `/sdlc:start "feature"` | Запуск повного 5-фазового пайплайну |
-| `/sdlc:batch "task1" "task2"` | Паралельний запуск для кількох задач (ізольовані worktree) |
-| `/sdlc:list-stacks` | Перегляд виявлених стек-профілів і priority |
-| `/sdlc:doctor` | Preflight check: dep check, stack detection, cost baseline |
-| `/sdlc:security-init` | Матеріалізувати security-patterns.yaml для security-guidance plugin |
+| `/sdlc:start "feature"` | Run the full 5-phase pipeline |
+| `/sdlc:batch "task1" "task2"` | Run pipelines in parallel for multiple tasks (isolated worktrees) |
+| `/sdlc:list-stacks` | Show detected stack profiles and their priorities |
+| `/sdlc:doctor` | Preflight check: dependency check, stack detection, cost baseline |
+| `/sdlc:security-init` | Materialize security-patterns.yaml for the security-guidance plugin |
 
 ---
 
-## Cost-оптимізація: model + effort
+## Cost Optimization: model + effort
 
-### Чому `model` + `effort`, а не `temperature`
+### Why `model` + `effort` instead of `temperature`
 
-Claude Code підтримує у frontmatter субагента:
-- `model` — `opus` / `sonnet` / `haiku` / повний ID / `inherit`
-- `effort` — `low` / `medium` / `high` / `xhigh` / `max` — **перекриває session-рівень reasoning-бюджету**
+Claude Code subagent frontmatter supports:
+- `model` — `opus` / `sonnet` / `haiku` / full model ID / `inherit`
+- `effort` — `low` / `medium` / `high` / `xhigh` / `max` — **overrides the session-level reasoning budget**
 
-`temperature` **не налаштовується per-subagent** у Claude Code. Керуємо виключно `model` + `effort`.
+`temperature` is **not configurable per-subagent** in Claude Code. We control cost exclusively through `model` + `effort`.
 
-### Таблиця model+effort по всіх агентах
+### model+effort table for all agents
 
-| Агент | Плагін | model | effort | Обґрунтування |
+| Agent | Plugin | model | effort | Rationale |
 |---|---|---|---|---|
-| `business-analyst` | sdlc | `opus` | `high` | Помилка вимог каскадує через 5 фаз; малий об'єм, максимальний важіль |
-| `security-analyst` | sdlc | `opus` | `high` | Неочевидні вразливості (TOCTOU, JWT confusion, SSRF) потребують deep reasoning |
-| `developer` | sdlc | `sonnet` | `medium` | Vanilla fallback — виконання за чітким спеком |
-| `qa-engineer` | sdlc | `sonnet` | `medium` | Тести за чіткими критеріями; hard 3-attempt cap тримає cost |
-| `document-writer` | sdlc | `haiku` | `low` | Структурований вивід із відомих фактів; ~10× економія vs Opus |
+| `business-analyst` | sdlc | `opus` | `high` | Requirement errors cascade through 5 phases; small token volume, maximum leverage |
+| `security-analyst` | sdlc | `opus` | `high` | Non-obvious vulnerabilities (TOCTOU, JWT confusion, SSRF) require deep reasoning |
+| `developer` | sdlc | `sonnet` | `medium` | Vanilla fallback — execution against a clear spec |
+| `qa-engineer` | sdlc | `sonnet` | `medium` | Tests against clear criteria; hard 3-attempt cap keeps cost in check |
+| `document-writer` | sdlc | `haiku` | `low` | Structured output from known facts; ~10× cheaper than Opus |
 | `laravel-architect` | laravel | `sonnet` | `medium` | Laravel idioms + Inertia/Vue |
-| `artisan-specialist` | laravel | `sonnet` | `low` | Механічна DB-робота: типи/індекси/factories |
-| `node-architect` | nodejs | `sonnet` | `medium` | Express/Fastify — implementation за Node.js ідіомами |
-| `nest-architect` | nestjs | `sonnet` | `medium` | Convention skills несуть per-domain глибину |
-| `nextjs-architect` | nextjs | `sonnet` | `medium` | RSC/Client patterns добре визначені spec і skills |
-| `react-architect` | react | `sonnet` | `medium` | React conventions та state/routing skills |
+| `artisan-specialist` | laravel | `sonnet` | `low` | Mechanical DB work: column types, indexes, factories |
+| `node-architect` | nodejs | `sonnet` | `medium` | Express/Fastify — implementation driven by clear Node.js idioms |
+| `nest-architect` | nestjs | `sonnet` | `medium` | Convention skills carry per-domain depth |
+| `nextjs-architect` | nextjs | `sonnet` | `medium` | RSC/Client patterns well-defined by spec and convention skills |
+| `react-architect` | react | `sonnet` | `medium` | React conventions and state/routing skills |
 | `vue-architect` | vue | `sonnet` | `medium` | Vue 3/2 detection + convention skills |
 | `angular-architect` | angular | `sonnet` | `medium` | Angular standalone/NgModule, signals, NgRx |
 | `rn-architect` | react-native | `sonnet` | `medium` | Expo/bare + iOS/Android axes |
 
-> `effort: high` на Opus — найдорожчий кут. Тому лише 2 агенти-важелі (BA і Security), де reasoning безпосередньо впливає на якість всіх наступних фаз.
+> `effort: high` on Opus is the most expensive combination. That's why only 2 leverage agents use it (BA and Security) — where reasoning quality directly impacts every downstream phase.
 
-### Орієнтовний кошторис medium-фічі
+### Estimated cost for a medium feature
 
-| Фаза | Агент | Cost |
+| Phase | Agent | Cost |
 |---|---|---|
 | BA | opus/high | ~$0.25 |
 | Dev | sonnet/medium | ~$0.60 |
-| QA | sonnet/medium (≤3 спроби) | ~$0.30 |
+| QA | sonnet/medium (≤3 attempts) | ~$0.30 |
 | Security | opus/high | ~$0.25 |
 | Docs | haiku/low | ~$0.07 |
 | **Total** | | **~$1.47** |
 
-### Додаткові cost-важелі
+### Additional cost levers
 
-- **Skip-rules:** typo-fix, whitespace-only, config-only, lightweight-no-db — пропускають зайві фази.
-- **QA hard cap:** max 3 спроби виправити тести, потім STOP.
-- **Compact handoffs:** кожен агент повертає ≤2–3K-token summary.
-- **Prompt caching:** стабільні system prompts (no timestamps, slugs, dynamic content) → ~60% cache hit rate на Sonnet.
+- **Skip-rules:** typo-fix, whitespace-only, config-only, lightweight-no-db — skip unnecessary phases automatically.
+- **QA hard cap:** max 3 attempts to fix failing tests, then STOP.
+- **Compact handoffs:** each agent returns a ≤2–3K-token summary.
+- **Prompt caching:** stable system prompts (no timestamps, slugs, or dynamic content) → ~60% cache hit rate on Sonnet.
 
 ---
 
-## Доступні плагіни
+## Available Plugins
 
-| Плагін | Тип | Стек/технологія |
+| Plugin | Type | Stack / Technology |
 |---|---|---|
-| `sdlc` | Core | Пайплайн-оркестратор, 5 агентів |
-| `js-foundation` | Shared lib | TypeScript + npm patterns (без стек-профіля) |
+| `sdlc` | Core | Pipeline orchestrator + 5 default agents |
+| `js-foundation` | Shared lib | TypeScript + npm patterns (no stack profile) |
 | `nodejs-plugin` | Stack provider | Express / Fastify / Koa / plain Node.js |
 | `nestjs-plugin` | Stack provider | NestJS + TypeORM/Prisma/Mongoose |
 | `nextjs-plugin` | Stack provider | Next.js App Router (full-stack) |
@@ -200,18 +200,18 @@ Claude Code підтримує у frontmatter субагента:
 | `react-native-plugin` | Stack provider | React Native / Expo |
 | `laravel-plugin` | Stack provider | Laravel + Inertia + Vue |
 
-### Зовнішні залежності (опціональні)
+### Optional external dependencies
 
-| Плагін | Source | Роль |
+| Plugin | Source | Role |
 |---|---|---|
-| `superpowers` | `obra/superpowers` | Додає brainstorming до BA, TDD до QA, verification-before-completion до архітекторів. Pipeline деградує gracefully без нього. |
-| `security-guidance` | `anthropics/claude-plugins-official` | Hooks-based security review: per-edit pattern match, end-of-turn diff review. OWASP фаза й без нього повна. |
+| `superpowers` | `obra/superpowers` | Adds brainstorming to BA, TDD to QA, verification-before-completion to architects. Pipeline degrades gracefully without it. |
+| `security-guidance` | `anthropics/claude-plugins-official` | Hooks-based in-session security review: per-edit pattern match, end-of-turn diff review. The OWASP security phase runs fully without it. |
 
 ---
 
-## Композиція стеків (multi-framework приклади)
+## Stack Composition Examples
 
-| Проєкт | Профіль | Development dispatch |
+| Project | Profile | Development dispatch |
 |---|---|---|
 | Laravel + Vue SPA (Inertia) | laravel (100) | laravel-architect (backend) + artisan-specialist (db) |
 | Express + React | nodejs (100) + react (150) | node-architect (backend) + react-architect (frontend) |
@@ -219,13 +219,13 @@ Claude Code підтримує у frontmatter субагента:
 | Next.js (full-stack) | nextjs (250) | nextjs-architect (owns backend + frontend) |
 | Expo mobile | react-native (300) | rn-architect (frontend) |
 | Vanilla Node.js | nodejs (100) | node-architect |
-| Невідомий стек | vanilla (0) | developer (fallback) |
+| Unknown stack | vanilla (0) | developer (fallback) |
 
 ---
 
-## Локальні оверайди
+## Local Overrides
 
-Файл `.claude/sdlc.local.yaml` у корені проєкту (не в плагіні) дозволяє адаптувати pipeline без зміни плагінів:
+A `.claude/sdlc.local.yaml` file at the project root (not inside the plugin) lets you adapt the pipeline without modifying any plugin:
 
 ```yaml
 post_pipeline_checks:
@@ -239,17 +239,17 @@ convention_skills_extra:
   - "local:custom-coding-standards"
 
 skip_phases:
-  - security  # для внутрішніх hotfix-branches
+  - security  # for internal hotfix branches
 
 extra_phase_prompts:
-  development: "Дотримуватись нашого internal-styleguide.md"
+  development: "Follow our internal-styleguide.md"
 ```
 
 ---
 
-## Як додати новий стек-плагін
+## Adding a New Stack Plugin
 
-Контракт для нового framework provider:
+Contract for a new framework provider:
 
 ```
 plugins/your-framework-plugin/
@@ -257,14 +257,14 @@ plugins/your-framework-plugin/
 │   └── plugin.json          # { "name": "...", "dependencies": ["sdlc"] }
 ├── stack.md                 # YAML frontmatter: stack, priority, aspects, detect
 ├── agents/
-│   └── your-architect.md   # frontmatter: name, model, effort, color, tools
+│   └── your-architect.md    # frontmatter: name, model, effort, color, tools
 ├── skills/
 │   └── your-conventions/
 │       └── SKILL.md
 └── README.md
 ```
 
-### `stack.md` приклад
+### `stack.md` example
 
 ```yaml
 ---
@@ -292,37 +292,37 @@ detect:
 - django-plugin:orm-patterns
 ```
 
-### Схеми для валідації
+### Schema validation
 
 ```bash
-# Перевірка plugin.json
+# Validate plugin.json
 npx check-jsonschema --schemafile schemas/plugin.schema.json .claude-plugin/plugin.json
 
-# Перевірка stack.md frontmatter
+# Validate stack.md frontmatter
 npx check-jsonschema --schemafile schemas/stack.schema.json <(yq '.frontmatter' stack.md)
 ```
 
 ---
 
-## Встановлення (детально)
+## Installation (step-by-step)
 
-### 1. Додати маркетплейс
+### 1. Add the marketplace
 
 ```bash
 /plugin marketplace add AratKruglik/claude-sdlc
-# або для локального dev:
+# or for local development:
 /plugin marketplace add /path/to/claude-sdlc
 ```
 
-### 2. Встановити core + потрібні плагіни
+### 2. Install core + required plugins
 
 ```bash
-# Core встановлюється автоматично як dependency
+# Core is installed automatically as a dependency
 /plugin install nodejs-plugin@sdlc-marketplace     # Node.js backend
-/plugin install js-foundation@sdlc-marketplace     # потрібно для JS/TS плагінів
+/plugin install js-foundation@sdlc-marketplace     # required for JS/TS plugins
 ```
 
-### 3. Опціональні зовнішні залежності
+### 3. Optional external dependencies
 
 ```bash
 /plugin marketplace add obra/superpowers
@@ -332,7 +332,7 @@ npx check-jsonschema --schemafile schemas/stack.schema.json <(yq '.frontmatter' 
 /plugin install security-guidance@claude-plugins-official
 ```
 
-### 4. Перевірка
+### 4. Verify
 
 ```bash
 /sdlc:doctor
@@ -344,7 +344,7 @@ npx check-jsonschema --schemafile schemas/stack.schema.json <(yq '.frontmatter' 
 # → Shows all matched stack profiles for current project
 ```
 
-### 5. Запуск
+### 5. Run
 
 ```bash
 /sdlc:start "Add user authentication with JWT"
@@ -353,12 +353,12 @@ npx check-jsonschema --schemafile schemas/stack.schema.json <(yq '.frontmatter' 
 
 ---
 
-## Вимоги
+## Requirements
 
 - Claude Code (latest)
-- API Tier 2+ або Claude Max — medium-фіча займає ~445K input tokens; Pro plan rate limits throttle pipeline.
-- Git репозиторій для `document-writer` (PR creation).
+- API Tier 2+ or Claude Max — a medium feature uses ~445K input tokens; Pro plan rate limits will throttle the pipeline.
+- A Git repository for `document-writer` (PR creation).
 
-## Ліцензія
+## License
 
 GPL-3.0 — see [`LICENSE`](./LICENSE).
