@@ -1,0 +1,84 @@
+# Workflow Resolver — Algorithm Reference
+
+This document specifies how the pipeline orchestrator loads, validates, and
+applies a workflow recipe file. Referenced from `pipeline-orchestrator/SKILL.md`
+Step 1c.
+
+## Step 1: Locate the workflow file
+
+1. If `$ARGUMENTS` contains `--workflow=NAME`, use `NAME` as `WORKFLOW_NAME`.
+2. Else if `EFFECTIVE_PROFILE` (from sdlc.local.yaml) specifies `active_workflow`,
+   use that as `WORKFLOW_NAME`. *(Iteration 4+)*
+3. Otherwise: `WORKFLOW_NAME = "default"`.
+
+Search path (in order, first match wins):
+
+```
+~/.claude/plugins/cache/sdlc/workflows/{WORKFLOW_NAME}.yaml
+```
+
+*(Iteration 4+: also search `<project>/.claude/sdlc-workflows/` for project-local recipes.)*
+
+If no file is found → **HALT**:
+
+```
+❌ Workflow '{WORKFLOW_NAME}' not found.
+   Searched: ~/.claude/plugins/cache/sdlc/workflows/{WORKFLOW_NAME}.yaml
+   Available: {list all *.yaml in the workflows/ directory via Glob, excluding test-fixtures/}
+   Use --canonical to run the built-in 5-phase pipeline without a workflow file.
+```
+
+## Step 2: Read and parse
+
+`Read` the located file. Parse YAML. Extract `phases` array.
+
+Normalize each element to `{name: string, when?: string}`:
+- String element `"foo"` → `{name: "foo"}`
+- Object element `{name: "foo", when: "..."}` → keep as-is
+
+## Step 3: Acyclic validation (Iteration 0)
+
+Extract the list of phase names: `phase_names = [p.name for p in phases]`.
+
+If any name appears more than once → **HALT**:
+
+```
+❌ Workflow '{workflow_name}' contains duplicate phase '{duplicate_name}'.
+   A workflow DAG must be acyclic — each phase may appear at most once.
+   File: {file_path}
+```
+
+*(Iteration 1+: when `after:` edges are introduced, also run a topological sort and
+detect back-edges. Until then, duplicate-name detection is sufficient.)*
+
+## Step 4: Build the resolved phase list
+
+Start with the normalized `phases` from Step 2 (already in order for Iteration 0).
+
+**Insert extra_phases from stack profiles:**
+
+For each entry in `EFFECTIVE_PROFILE.extra_phases` (merged in Step 1a):
+- Find the index of the phase named `extra_phase.after` in the list.
+- If found: insert the extra phase immediately after that index.
+- If not found: skip with a one-line warning:
+  ```
+  ⚠️ Extra phase '{extra_phase.name}' has after='{extra_phase.after}' which is
+     not present in workflow '{WORKFLOW_NAME}' — skipping.
+  ```
+
+**Apply skip_phases (sources: Step 0c skip-rules + Step 1b sdlc.local.yaml):**
+
+Remove all phases whose `name` is in the combined skip set.
+
+## Step 5: Persist and announce
+
+Store the resolved list as `CONTEXT.resolved_phases[]`. Persist `WORKFLOW_NAME` in
+`CONTEXT.active_workflow`.
+
+Print (part of the existing Step 0b verbatim block, not a new block):
+
+```
+   workflow: {WORKFLOW_NAME}  ({N} phases)
+```
+
+*(Full "resolved plan + cost-preview" verbatim block is added in Iteration 1.)*
