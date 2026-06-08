@@ -13,7 +13,7 @@ Step 1c.
 
 Search path (in order, first match wins):
 
-```
+```text
 ~/.claude/plugins/cache/sdlc/workflows/{WORKFLOW_NAME}.yaml
 ```
 
@@ -21,7 +21,7 @@ Search path (in order, first match wins):
 
 If no file is found → **HALT**:
 
-```
+```text
 ❌ Workflow '{WORKFLOW_NAME}' not found.
    Searched: ~/.claude/plugins/cache/sdlc/workflows/{WORKFLOW_NAME}.yaml
    Available: {list all *.yaml in the workflows/ directory via Glob, excluding test-fixtures/}
@@ -33,6 +33,7 @@ If no file is found → **HALT**:
 `Read` the located file. Parse YAML. Extract `phases` array.
 
 Normalize each element to `{name: string, when?: string}`:
+
 - String element `"foo"` → `{name: "foo"}`
 - Object element `{name: "foo", when: "..."}` → keep as-is
 
@@ -42,7 +43,7 @@ Extract the list of phase names: `phase_names = [p.name for p in phases]`.
 
 If any name appears more than once → **HALT**:
 
-```
+```text
 ❌ Workflow '{workflow_name}' contains duplicate phase '{duplicate_name}'.
    A workflow DAG must be acyclic — each phase may appear at most once.
    File: {file_path}
@@ -55,18 +56,22 @@ detect back-edges. Until then, duplicate-name detection is sufficient.)*
 
 Start with the normalized `phases` from Step 2 (already in order for Iteration 0).
 
-**Insert extra_phases from stack profiles:**
+### Insert extra_phases from stack profiles
 
 For each entry in `EFFECTIVE_PROFILE.extra_phases` (merged in Step 1a):
+
 - Find the index of the phase named `extra_phase.after` in the list.
 - If found: insert the extra phase immediately after that index.
 - If not found: skip with a one-line warning:
-  ```
-  ⚠️ Extra phase '{extra_phase.name}' has after='{extra_phase.after}' which is
-     not present in workflow '{WORKFLOW_NAME}' — skipping.
-  ```
 
-**Apply skip_phases (sources: Step 0c skip-rules + Step 1b sdlc.local.yaml):**
+```text
+⚠️ Extra phase '{extra_phase.name}' has after='{extra_phase.after}' which is
+   not present in workflow '{WORKFLOW_NAME}' — skipping.
+```
+
+### Apply skip_phases
+
+Sources: Step 0c skip-rules + Step 1b sdlc.local.yaml.
 
 Remove all phases whose `name` is in the combined skip set.
 
@@ -77,7 +82,7 @@ Store the resolved list as `CONTEXT.resolved_phases[]`. Persist `WORKFLOW_NAME` 
 
 Print (part of the existing Step 0b verbatim block, not a new block):
 
-```
+```text
    workflow: {WORKFLOW_NAME}  ({N} phases)
 ```
 
