@@ -425,18 +425,30 @@ Do not abort — local override is optional, plugin profile is always usable as 
 
 #### 1c. Build the canonical phase order
 
-```
-business_analysis
-  → development
-  → [extra_phases inserted at their `after:` point]
-  → qa
-  → security
-  → documentation
-```
+Load the workflow definition file and derive the ordered phase list by following the
+algorithm in `plugins/sdlc/workflows/RESOLVER.md` (Steps 1–5).
 
-Skipped phases are removed from this order. Sources of skips:
-- Step 0c skip-rules (e.g., typo-fix → skip BA)
-- Step 1b `skip_phases` from `sdlc.local.yaml` (e.g., external SAST → skip security)
+Summary:
+
+1. **Locate:** resolve `WORKFLOW_NAME` (from `--workflow=NAME`, or `"default"`).
+   Find `~/.claude/plugins/cache/sdlc/workflows/{WORKFLOW_NAME}.yaml` via `Glob`.
+   If not found → HALT with the error message specified in RESOLVER.md Step 1.
+2. **Read, parse, and validate:** `Read` the file, validate against
+   `schemas/workflow.schema.json`, extract the `phases` array, normalize each
+   element to `{name, when?}`. If validation fails → HALT per RESOLVER.md Step 2.
+3. **Validate acyclic:** if any phase `name` appears more than once in the
+   workflow file → HALT per RESOLVER.md Step 3.
+4. **Insert extra_phases** from `EFFECTIVE_PROFILE.extra_phases` at their `after:`
+   points, then re-run the conflict check (RESOLVER.md Step 4).
+5. **Apply skips** — same two sources as before:
+   - Step 0c skip-rules
+   - Step 1b `skip_phases` from `sdlc.local.yaml`
+6. **Persist and print:** store as `CONTEXT.resolved_phases[]`, persist
+   `WORKFLOW_NAME` in `CONTEXT.active_workflow`, and print one line per
+   RESOLVER.md Step 5.
+
+The resolved `CONTEXT.resolved_phases[]` replaces the hardcoded list for all
+downstream steps. Phase names and their semantics are unchanged.
 
 ### Step 2 — Generate task slug and prepare workspace
 
