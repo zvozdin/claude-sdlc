@@ -425,18 +425,28 @@ Do not abort — local override is optional, plugin profile is always usable as 
 
 #### 1c. Build the canonical phase order
 
-```
-business_analysis
-  → development
-  → [extra_phases inserted at their `after:` point]
-  → qa
-  → security
-  → documentation
-```
+Load the workflow definition file and derive the ordered phase list by following the
+algorithm in `plugins/sdlc/workflows/RESOLVER.md` (Steps 1–5).
 
-Skipped phases are removed from this order. Sources of skips:
-- Step 0c skip-rules (e.g., typo-fix → skip BA)
-- Step 1b `skip_phases` from `sdlc.local.yaml` (e.g., external SAST → skip security)
+Summary:
+
+1. **Locate:** resolve `WORKFLOW_NAME` (from `--workflow=NAME`, or `"default"`).
+   Find `~/.claude/plugins/cache/sdlc/workflows/{WORKFLOW_NAME}.yaml` via `Glob`.
+   If not found → HALT with the error message specified in RESOLVER.md Step 1.
+2. **Read, parse, and validate:** `Read` the file, validate against
+   `schemas/workflow.schema.json`, extract the `phases` array, normalize each
+   element to `{name, when?}`. If validation fails → HALT per RESOLVER.md Step 2.
+3. **Validate acyclic:** if any phase `name` appears more than once in the
+   workflow file → HALT per RESOLVER.md Step 3.
+4. **Build resolved list (RESOLVER.md Step 4):** insert `extra_phases` from
+   `EFFECTIVE_PROFILE.extra_phases` at their `after:` points; re-run conflict
+   check; apply skips (Step 0c skip-rules + Step 1b `skip_phases` from
+   `sdlc.local.yaml`).
+5. **Persist and print (RESOLVER.md Step 5):** store as `CONTEXT.resolved_phases[]`,
+   persist `WORKFLOW_NAME` in `CONTEXT.active_workflow`, print one line at Step 1c.
+
+The resolved `CONTEXT.resolved_phases[]` replaces the hardcoded list for all
+downstream steps. Phase names and their semantics are unchanged.
 
 ### Step 2 — Generate task slug and prepare workspace
 
@@ -527,6 +537,8 @@ Examples:
 
 This is a contract with the user. Do not skip.
 
+**3b-3. Resolve model from agent frontmatter** — before spawning, resolve `{model_tier}` by reading the `model:` YAML field from the agent's `.md` file (`plugins/**/agents/{agent_name}.md`). This resolved tier is what you print in 3b-2 and pass to `Agent()` in 3c. Tier-to-ID mapping: `opus → claude-opus-4-8`, `sonnet → claude-sonnet-4-6`, `haiku → claude-haiku-4-5-20251001`. If the file is missing or the field is absent, warn inline and fall back to `sonnet`.
+
 **3b-special. Development phase two-pass execution**
 
 The development phase runs in TWO passes with a user approval gate between them. This applies to every agent invocation within the development phase (each aspect in an aspect-aware fan-out runs its own two-pass cycle).
@@ -559,11 +571,12 @@ The development phase runs in TWO passes with a user approval gate between them.
 
 For aspect-aware fan-out, the canonical order remains: `database → backend → frontend → testing`. Each aspect completes both passes before the next aspect begins (the plan for backend may depend on what database-aspect implemented).
 
-**3c. Spawn the agent** via the `Agent` tool with `subagent_type` set to the agent name:
+**3c. Spawn the agent** via the `Agent` tool with `subagent_type` and the model resolved in 3b-3:
 
 ```
 Agent({
   subagent_type: "{agent_from_profile}",
+  model: "{model_id_resolved_in_3b-3}",
   description: "Phase {N}/{total}: {phase_name}",
   prompt: <the prompt built in 3b>
 })
@@ -574,10 +587,11 @@ Agent({
 **3d-1. Capture per-phase telemetry** — extract from the Agent tool result (when usage data is present in the result envelope, read `input_tokens`, `output_tokens`, `cached_input_tokens`; otherwise estimate from prompt + summary character length / 4). Compute:
 
 - `compact_summary_chars` — `len(CONTEXT.{phase}_output)`. If > 3000 chars (≈ 3K-token target), record `compact_handoff_violation: true` and emit a one-line warning to stderr: `WARN: {phase} compact summary exceeded budget ({chars} chars > 3000)`. Do not abort — the violation is recorded for post-run analysis.
+- `model` — the full model ID declared in the agent's frontmatter (`claude-opus-4-8`, `claude-sonnet-4-6`, or `claude-haiku-4-5-20251001`). This is the authoritative value because the PreToolUse hook enforces it at dispatch time. **Do not** read this from the Agent result envelope (it is not exposed there).
 - `cost_usd` — derived from per-model pricing table (kept inline for transparency):
-  - opus: input $15/MTok, cached input $1.50/MTok, output $75/MTok
-  - sonnet: input $3/MTok, cached input $0.30/MTok, output $15/MTok
-  - haiku: input $1/MTok, cached input $0.10/MTok, output $5/MTok
+  - opus (`claude-opus-4-8`): input $15/MTok, cached input $1.50/MTok, output $75/MTok
+  - sonnet (`claude-sonnet-4-6`): input $3/MTok, cached input $0.30/MTok, output $15/MTok
+  - haiku (`claude-haiku-4-5-20251001`): input $1/MTok, cached input $0.10/MTok, output $5/MTok
 - For aspect-aware phase fan-out, push one entry **per aspect** into `phases[]` with `phase: "{phase_name}"` and `aspect: "{aspect}"` set; aspect-agnostic phases omit `aspect`.
 
 **3d-2. QA-specific telemetry** — when running the `qa` phase, parse the agent's compact summary for the lines `ITERATIONS_USED: N` (max 3, hard cap from the agent prompt) and `STATUS: complete | incomplete-blocked`. Record:
@@ -632,12 +646,13 @@ Write `docs/plans/{task_slug}/_telemetry.json`:
   "started_at": "<ISO timestamp>",
   "completed_at": "<ISO timestamp>",
   "wall_clock_seconds": 187,
+  "model_enforcement_corrections": 0,
   "phases": [
     {
       "phase": "business_analysis",
       "aspect": null,
       "agent": "business-analyst",
-      "model": "claude-opus-4-7",
+      "model": "claude-opus-4-8",
       "status": "completed",
       "input_tokens": 35000,
       "output_tokens": 3000,
