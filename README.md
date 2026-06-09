@@ -121,6 +121,7 @@ Phase 6: Docs → document-writer
 ### Per-aspect dispatch (multi-framework projects)
 
 For a project with a Node.js backend and a React frontend:
+
 - Phase 2/backend → `node-architect`
 - Phase 2/frontend → `react-architect` (separate run)
 
@@ -226,8 +227,6 @@ The hook is registered in `plugins/sdlc/hooks/hooks.json`. To activate it for yo
 | `sonnet` | `claude-sonnet-4-6` |
 | `haiku` | `claude-haiku-4-5-20251001` |
 
-Corrections are logged to `docs/plans/_model-enforcement.log`. Unknown agents (non-SDLC subagents) are allowed through without changes — the hook fails open.
-
 ---
 
 ## Cost Optimization: model + effort
@@ -235,6 +234,7 @@ Corrections are logged to `docs/plans/_model-enforcement.log`. Unknown agents (n
 ### Why `model` + `effort` instead of `temperature`
 
 Claude Code subagent frontmatter supports:
+
 - `model` — `opus` / `sonnet` / `haiku` / full model ID / `inherit`
 - `effort` — `low` / `medium` / `high` / `xhigh` / `max` — **overrides the session-level reasoning budget**
 
