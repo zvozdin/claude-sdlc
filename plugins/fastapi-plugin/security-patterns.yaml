@@ -1,0 +1,36 @@
+patterns:
+  - rule_name: fastapi_hardcoded_secret
+    regex: "(SECRET_KEY|JWT_SECRET|DATABASE_URL)\\s*=\\s*['\"][^'\"]{4,}['\"]"
+    paths: ["**/*.py"]
+    exclude_paths: ["**/test_*.py", "**/*_test.py", "**/tests/**", "**/.env.example"]
+    reminder: "Hardcoded SECRET_KEY, JWT_SECRET, or DATABASE_URL in source code risks credential exposure if the repository is shared or leaked. Read all secrets from environment variables via pydantic-settings BaseSettings: class Settings(BaseSettings): JWT_SECRET: str. Never assign a literal string."
+
+  - rule_name: fastapi_debug_mode
+    regex: "debug\\s*=\\s*True"
+    paths: ["**/*.py"]
+    exclude_paths: ["**/test_*.py", "**/*_test.py", "**/tests/**"]
+    reminder: "debug=True in FastAPI(debug=True) or uvicorn.run(..., debug=True) exposes Python stack traces and internal error details to end users. Set debug=False in production and read the value from an environment variable: FastAPI(debug=settings.DEBUG)."
+
+  - rule_name: fastapi_cors_any_with_credentials
+    regex: "allow_origins\\s*=\\s*\\[\\s*['\"]\\*['\"]"
+    paths: ["**/*.py"]
+    exclude_paths: ["**/test_*.py", "**/*_test.py", "**/tests/**"]
+    reminder: "allow_origins=['*'] combined with allow_credentials=True is forbidden by the CORS specification and blocked by all major browsers. Use an explicit allowed-origins list when credentials are required: allow_origins=settings.CORS_ALLOWED_ORIGINS."
+
+  - rule_name: fastapi_sql_text_injection
+    regex: "text\\s*\\(\\s*[fF]['\"]|text\\s*\\([^)]*%\\s*[({]|text\\s*\\([^)]*\\.format"
+    paths: ["**/*.py"]
+    exclude_paths: ["**/test_*.py", "**/*_test.py", "**/tests/**"]
+    reminder: "text() with f-strings, % formatting, or .format() interpolation is a SQL injection risk. Use bound parameters instead: text('SELECT * FROM users WHERE id = :id') and pass {'id': user_id} to session.execute(). SQLAlchemy parameterizes bound parameters safely."
+
+  - rule_name: fastapi_missing_auth_dependency
+    regex: "@router\\.(get|post|put|delete|patch)\\s*\\([^)]*\\)\\s*\\n+\\s*(?:async\\s+)?def"
+    paths: ["**/*.py"]
+    exclude_paths: ["**/test_*.py", "**/*_test.py", "**/tests/**"]
+    reminder: "Advisory: verify that each state-changing endpoint (POST, PUT, PATCH, DELETE) includes Depends(get_current_user) or Security(get_current_user) in its signature, or that the router was created with dependencies=[Depends(get_current_user)]. Endpoints without auth are only acceptable when the BA spec explicitly calls for anonymous access."
+
+  - rule_name: fastapi_jwt_weak_algorithm
+    regex: "algorithm\\s*=\\s*['\"]none['\"]|algorithms\\s*=\\s*\\[\\s*['\"]none['\"]|algorithm\\s*=\\s*['\"]HS(128|192)['\"]"
+    paths: ["**/*.py"]
+    exclude_paths: ["**/test_*.py", "**/*_test.py", "**/tests/**"]
+    reminder: "JWT algorithm 'none' disables signature verification entirely — any token will be accepted. HS128 and HS192 use shorter key lengths than recommended. Use at least HS256 with a JWT_SECRET of 32+ bytes read from an environment variable. Never allow the 'none' algorithm: algorithms=['HS256']."

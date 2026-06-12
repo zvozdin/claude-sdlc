@@ -2,7 +2,7 @@
 
 Multi-stack AI-assisted SDLC pipelines built on the **Stack Provider Pattern**: a single core orchestrator runs the pipeline, framework plugins register themselves via declarative `stack.md` profiles. No core overrides, no slot registries, no copy-paste between stacks.
 
-**v1.0.1** — 21 plugins: 1 core + 4 shared libs + 7 JS/TS stacks + 5 PHP/Laravel/Symfony stacks + 3 Java/.NET stacks. Cost-optimized: model tiering + `effort` per-subagent. Dynamic workflow recipes + guaranteed per-agent model enforcement.
+**v1.0.2** — 26 plugins: 1 core + 5 shared libs + 7 JS/TS stacks + 5 PHP/Laravel/Symfony stacks + 3 Java/.NET stacks + **5 Python stacks (new)**. Cost-optimized: model tiering + `effort` per-subagent. Dynamic workflow recipes + guaranteed per-agent model enforcement.
 
 ---
 
@@ -22,6 +22,11 @@ Multi-stack AI-assisted SDLC pipelines built on the **Stack Provider Pattern**: 
 /plugin install vue-plugin@sdlc-marketplace      # Vue 3 SPA
 /plugin install angular-plugin@sdlc-marketplace  # Angular 18-21
 /plugin install react-native-plugin@sdlc-marketplace  # React Native / Expo
+# or for Python projects:
+/plugin install django-plugin@sdlc-marketplace   # Django + DRF
+/plugin install fastapi-plugin@sdlc-marketplace  # FastAPI + SQLAlchemy 2.0
+/plugin install flask-plugin@sdlc-marketplace    # Flask + Flask-Migrate
+/plugin install python-plugin@sdlc-marketplace   # Plain Python (CLI/library/scripts)
 
 # 3. Verify
 /sdlc:doctor
@@ -78,9 +83,13 @@ Multi-stack AI-assisted SDLC pipelines built on the **Stack Provider Pattern**: 
 | 100 | `symfony-plugin` | backend, database | `composer.json` + `symfony/framework-bundle` |
 | 100 | `java-plugin` | backend | `pom.xml` or `build.gradle` or `build.gradle.kts` |
 | 100 | `aspnet-core-plugin` | backend, database | `appsettings.json` |
+| 100 | `python-plugin` | backend | `pyproject.toml` or `requirements.txt` or `setup.py` or `Pipfile` |
 | 150 | `react-plugin` | frontend | `package.json` + `react` (without `next`, `react-native`) |
 | 150 | `vue-plugin` | frontend | `package.json` + `vue` |
 | 150 | `spring-boot-plugin` | backend | any build file + `spring-boot` marker |
+| 150 | `django-plugin` | backend, database | `manage.py` or Django in `pyproject.toml`/`requirements.txt` |
+| 150 | `fastapi-plugin` | backend, database | `fastapi` in `pyproject.toml`/`requirements.txt` |
+| 150 | `flask-plugin` | backend, database | `Flask` in `pyproject.toml`/`requirements.txt` |
 | 175 | `inertia-vue-plugin` | frontend | `package.json` + `@inertiajs/vue3` |
 | 175 | `inertia-react-plugin` | frontend | `package.json` + `@inertiajs/react` |
 | 200 | `nestjs-plugin` | backend, database | `package.json` + `@nestjs/core` |
@@ -391,24 +400,29 @@ stack: django
 priority: 150
 aspects: [backend, database]
 detect:
-  all:
+  any:
     - file_exists: manage.py
     - file_contains:
+        path: pyproject.toml
+        pattern: "[Dd]jango"
+    - file_contains:
         path: requirements.txt
-        pattern: "django"
+        pattern: "[Dd]jango"
 ---
+# Django Stack Profile
 
 ## Agents per phase
-- business_analysis: business-analyst
-- development:
-    backend: django-architect
-- qa: qa-engineer
-- security: security-analyst
-- documentation: document-writer
+# business_analysis: business-analyst
+# development.backend: django-architect
+# database: django-migrations-specialist
+# qa: qa-engineer / security: security-analyst / documentation: document-writer
 
-## Convention skills
-- django-plugin:django-conventions
-- django-plugin:orm-patterns
+## Convention skills to apply
+# python-foundation:python-conventions
+# python-foundation:python-tooling
+# python-foundation:pytest-testing
+# django-plugin:django-conventions
+# django-plugin:django-orm-patterns
 ```
 
 ### Schema validation
