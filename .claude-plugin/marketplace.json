@@ -1,6 +1,6 @@
 {
   "name": "sdlc-marketplace",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Multi-stack AI-assisted SDLC pipelines for Claude Code. Stack Provider Pattern: core owns the pipeline, framework plugins register themselves via stack.md profiles.",
   "owner": {
     "name": "Oleksii Kruhlyk",
@@ -118,6 +118,31 @@
       "name": "spring-boot-plugin",
       "source": "./plugins/spring-boot-plugin",
       "description": "Spring Boot backend stack provider (priority=150). Detects Spring Boot projects via spring-boot marker in any build file. Adds spring-boot-architect agent (Sonnet/medium) covering REST controllers, Spring Data JPA, Bean Validation, Spring Security, Flyway/Liquibase migrations, and @SpringBootTest/@WebMvcTest/@DataJpaTest test slices. Beats java-plugin (100) on the backend aspect for Spring projects. Reuses java-foundation skills."
+    },
+    {
+      "name": "python-foundation",
+      "source": "./plugins/python-foundation",
+      "description": "Shared Python foundation skills for the SDLC marketplace. Contains stack-agnostic Python conventions (python-conventions — type hints, dataclasses, match, pathlib, enums, context managers, PEP 8, strict typing), python-tooling (pyproject.toml as source of truth, pip/Poetry/uv/pipenv, venv, lockfiles, ruff lint+format, mypy, console scripts), and pytest-testing (fixtures, parametrize, conftest, monkeypatch, unittest.mock, pytest-cov). No agent, no stack profile — pure shared library. Referenced by django-plugin, fastapi-plugin, flask-plugin, and python-plugin."
+    },
+    {
+      "name": "python-plugin",
+      "source": "./plugins/python-plugin",
+      "description": "Plain Python backend stack provider (priority=100). Detects any Python project via pyproject.toml/requirements.txt/setup.py/Pipfile. Adds python-architect agent (Sonnet/medium) for libraries, CLI tools, scripts, data pipelines, and microservices without a recognized web framework. Falls back gracefully when django-plugin/fastapi-plugin/flask-plugin (priority 150) match instead. Adds python-app-conventions skill. Reuses python-foundation skills."
+    },
+    {
+      "name": "django-plugin",
+      "source": "./plugins/django-plugin",
+      "description": "Django backend + database stack provider (priority=150). Detects manage.py or Django in pyproject.toml/requirements.txt. Provides django-architect (Sonnet/medium — views, DRF ViewSets, serializers, forms, URLconf, middleware, signals, model definitions, Django templates, DRF API contract for SPA frontends) and django-migrations-specialist (Sonnet/low — model field finalization, indexes/constraints, makemigrations, sqlmigrate review, migrate, verify) agents plus django-conventions and django-orm-patterns skills. Reuses python-foundation skills. Extra database phase after development."
+    },
+    {
+      "name": "fastapi-plugin",
+      "source": "./plugins/fastapi-plugin",
+      "description": "FastAPI backend + database stack provider (priority=150). Detects fastapi in pyproject.toml/requirements.txt. Provides fastapi-architect (Sonnet/medium — APIRouter, Pydantic v2 schemas, Depends injection, async endpoints, OAuth2/JWT, OpenAPI, SQLAlchemy model stubs, API contract for SPA frontends) and alembic-specialist (Sonnet/low — SQLAlchemy 2.0 mapped classes, alembic revision --autogenerate, migration review, alembic upgrade head, verification) agents plus fastapi-conventions and sqlalchemy-patterns skills. Reuses python-foundation skills. Extra database phase after development."
+    },
+    {
+      "name": "flask-plugin",
+      "source": "./plugins/flask-plugin",
+      "description": "Flask backend + database stack provider (priority=150). Detects Flask in pyproject.toml/requirements.txt. Provides flask-architect (Sonnet/medium — app factory, Blueprints, views, Flask-Login/JWT auth, Jinja2 templates or JSON API, Marshmallow/WTForms, SQLAlchemy model definitions) and flask-migrate-specialist (Sonnet/low — Flask-Migrate: flask db migrate, SQL review, flask db upgrade, flask db check) agents plus flask-conventions and sqlalchemy-patterns skills. Reuses python-foundation skills. Extra database phase after development."
     }
   ]
 }
