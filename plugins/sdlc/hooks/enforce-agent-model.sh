@@ -52,7 +52,23 @@ project_root="${CLAUDE_PROJECT_DIR:-$(pwd)}"
 log_path="${project_root}/docs/plans/_model-enforcement.log"
 
 # ── find agent .md ──────────────────────────────────────────────────────────
-md_path=$(find "${project_root}/plugins" -path "*/agents/${agent_name}.md" 2>/dev/null | head -1)
+# Search order: installed plugin root → sibling plugins (marketplace layout) → dev checkout fallback
+search_roots=()
+if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
+    search_roots+=(
+        "${CLAUDE_PLUGIN_ROOT}"
+        "$(dirname "${CLAUDE_PLUGIN_ROOT}")"
+        "$(dirname "$(dirname "${CLAUDE_PLUGIN_ROOT}")")"
+    )
+fi
+search_roots+=( "${project_root}/plugins" )
+
+md_path=""
+for root in "${search_roots[@]}"; do
+    [ -d "$root" ] || continue
+    md_path=$(find "$root" -path "*/agents/${agent_name}.md" 2>/dev/null | head -1)
+    [ -n "$md_path" ] && break
+done
 
 if [ -z "$md_path" ]; then
     allow_warn "[model-enforcement] agent '${agent_name}' .md not found — skipping model check (non-SDLC agent?)"
