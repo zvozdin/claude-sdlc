@@ -208,25 +208,7 @@ Every agent in the SDLC pipeline declares its `model:` tier in frontmatter. The 
 
 2. **PreToolUse hook (Layer 2)** — `plugins/sdlc/hooks/enforce-agent-model.sh` intercepts every `Agent` tool call at the harness level. It reads the agent's declared `model:`, compares it with the requested model, and corrects it via `updatedInput` if they differ. This fires even if the orchestrator misses the step.
 
-The hook is registered in `plugins/sdlc/hooks/hooks.json`. To activate it for your project, add to `.claude/settings.json`:
-
-```json
-{
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Agent",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"${CLAUDE_PROJECT_DIR:-$(pwd)}/plugins/sdlc/hooks/enforce-agent-model.sh\""
-          }
-        ]
-      }
-    ]
-  }
-}
-```
+The hook is registered in `plugins/sdlc/hooks/hooks.json` and activates automatically when the plugin is installed via the marketplace — no manual `settings.json` changes needed.
 
 **Tier → model ID mapping:**
 
