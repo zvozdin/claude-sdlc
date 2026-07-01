@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/enforce-agent-model.sh\"",
+            "command": "bash -c 'for d in \"${CLAUDE_PLUGIN_ROOT:-}\" \"${HOME}/.claude/plugins/cache/sdlc\" \"${PWD}/plugins/sdlc\"; do f=\"$d/hooks/enforce-agent-model.sh\"; if [ -f \"$f\" ]; then bash \"$f\"; exit 0; fi; done; echo \"{\\\"hookSpecificOutput\\\":{\\\"hookEventName\\\":\\\"PreToolUse\\\",\\\"permissionDecision\\\":\\\"allow\\\"}}\"'",
             "description": "Enforce declared model tier for SDLC pipeline agents. Reads model: from agent frontmatter and injects the correct model ID via updatedInput before the Agent tool fires. Fails open for unknown agents."
           }
         ]

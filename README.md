@@ -28,7 +28,11 @@ Multi-stack AI-assisted SDLC pipelines built on the **Stack Provider Pattern**: 
 /plugin install flask-plugin@sdlc-marketplace    # Flask + Flask-Migrate
 /plugin install python-plugin@sdlc-marketplace   # Plain Python (CLI/library/scripts)
 
-# 3. Verify
+# 3. Install optional plugins
+/plugin marketplace add mattpocock/skills
+/plugin install mattpocock-skills@skills # Enhances BA phase with interactive grilling
+
+# 4. Verify
 /sdlc:doctor
 /sdlc:list-stacks
 
@@ -483,6 +487,8 @@ npx check-jsonschema --schemafile schemas/stack.schema.json <(yq '.frontmatter' 
 ### 3. Optional external dependencies
 
 ```bash
+/plugin marketplace add mattpocock/skills
+/plugin install mattpocock-skills@skills
 /plugin marketplace add obra/superpowers
 /plugin install superpowers@superpowers-marketplace
 

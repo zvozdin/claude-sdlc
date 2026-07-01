@@ -16,6 +16,20 @@
         "/plugin marketplace add obra/superpowers",
         "/plugin install superpowers@superpowers"
       ]
+    },
+    {
+      "name": "mattpocock-skills",
+      "marketplace": "mattpocock/skills",
+      "version": ">=1.0.0",
+      "policy": "warn",
+      "skills_used": [
+        "grill-me"
+      ],
+      "fallback_note": "Pipeline runs without it but BA phase won't use interactive grilling for task specification.",
+      "install_command": [
+        "/plugin marketplace add mattpocock/skills",
+        "/plugin install mattpocock-skills@skills"
+      ]
     }
   ]
 }

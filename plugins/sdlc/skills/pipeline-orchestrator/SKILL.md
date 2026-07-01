@@ -746,6 +746,9 @@ These are the canonical prompts. Stack profiles inject additional text via `phas
 ```
 Verify and consolidate requirements for this feature: $ARGUMENTS
 
+Step 0: If mattpocock-skills is available (no mattpocock-skills_unavailable flag),
+invoke mattpocock-skills:grill-me to relentlessly interview the user to sharpen the spec.
+
 Your primary job is NOT generating requirements from scratch. Requirements come from
 BA/PO stakeholders. You must:
 
